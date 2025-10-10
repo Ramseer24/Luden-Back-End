@@ -1,6 +1,0 @@
-@GameShopLuden_HostAddress = http://localhost:5051
-
-GET {{GameShopLuden_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
