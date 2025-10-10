@@ -1,4 +1,7 @@
-﻿namespace LudenWebAPI
+﻿using Microsoft.EntityFrameworkCore;
+using Entities.Models;
+using Infrastructure;
+namespace LudenWebAPI
 {
     public class Program
     {
@@ -11,7 +14,8 @@
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
+            builder.Services.AddDbContext<LudenDbContext>(options =>
+               options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -27,6 +31,8 @@
                 app.UseHsts();
             }
 
+
+            
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
