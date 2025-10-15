@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace Entities.Models
 {
-    public abstract class BaseEntity
+    public interface IEntity
     {
+        public int Id { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

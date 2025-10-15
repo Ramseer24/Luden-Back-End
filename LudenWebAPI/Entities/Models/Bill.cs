@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Entities.Models
 {
     [Table("Bills")]
-    public class Bill : BaseEntity
+    public class Bill : IEntity
     {
         [Key]
         public int Id { get; set; }
@@ -20,7 +20,8 @@ namespace Entities.Models
 
         public decimal TotalAmount { get; set; }
         public string Status { get; set; }
-
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
         // Навигационные свойства
         public ICollection<BillItem> BillItems { get; set; }
     }
