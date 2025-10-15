@@ -1,11 +1,6 @@
-﻿using Entities.Models;
+﻿using Application.Abstractions.Interfaces.Repository;
+using Entities.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Application.Abstractions.Interfaces.Repository;
 namespace Infrastructure
 {
     namespace Infrastructure.Repository
@@ -13,12 +8,12 @@ namespace Infrastructure
 
         public class GenericRepository<T> : IGenericRepository<T> where T : class, IEntity
         {
-            protected readonly DbContext _context;
+            protected readonly LudenDbContext context;
             protected readonly DbSet<T> _dbSet;
 
-            public GenericRepository(DbContext context)
+            public GenericRepository(LudenDbContext context)
             {
-                _context = context ?? throw new ArgumentNullException(nameof(context));
+                this.context = context ?? throw new ArgumentNullException(nameof(context));
                 _dbSet = context.Set<T>();
             }
 
@@ -58,7 +53,7 @@ namespace Infrastructure
 
             public async Task SaveChangesAsync()
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
         }
     }

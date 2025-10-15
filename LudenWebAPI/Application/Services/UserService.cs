@@ -1,24 +1,13 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Services
 {
-    public class UserService : IUserService
+    public class UserService(IUserRepository repository) : GenericService<User>(repository), IUserService
     {
-        private readonly IGenericRepository<User> _userRepository;
-
-        public UserService(IGenericRepository<User> userRepository)
-        {
-            _userRepository = userRepository;
-        }
-
         public async Task<User> CreateUserAsync(string username, string email, string password, string role = "User")
         {
             // Проверка существования
@@ -38,45 +27,45 @@ namespace Application.Services
                 Bills = new List<Bill>()
             };
 
-            await _userRepository.AddAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await repository.AddAsync(user);
+            await repository.SaveChangesAsync();
 
             return user;
         }
 
         public async Task<User> GetUserByIdAsync(int id)
         {
-            return await _userRepository.GetByIdAsync(id);
+            return await repository.GetByIdAsync(id);
         }
 
         public async Task<User> GetUserByUsernameAsync(string username)
         {
-            var users = await _userRepository.GetAllAsync();
+            var users = await repository.GetAllAsync();
             return users.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
         }
 
         public async Task<User> GetUserByEmailAsync(string email)
         {
-            var users = await _userRepository.GetAllAsync();
+            var users = await repository.GetAllAsync();
             return users.FirstOrDefault(u => u.Email.ToLower() == email.ToLower());
         }
 
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            return await _userRepository.GetAllAsync();
+            return await repository.GetAllAsync();
         }
 
         public async Task UpdateUserAsync(User user)
         {
             user.UpdatedAt = DateTime.UtcNow;
-            await _userRepository.UpdateAsync(user);
-            await _userRepository.SaveChangesAsync();
+            await repository.UpdateAsync(user);
+            await repository.SaveChangesAsync();
         }
 
         public async Task DeleteUserAsync(int id)
         {
-            await _userRepository.RemoveByIdAsync(id);
-            await _userRepository.SaveChangesAsync();
+            await repository.RemoveByIdAsync(id);
+            await repository.SaveChangesAsync();
         }
 
         public async Task<bool> UsernameExistsAsync(string username)

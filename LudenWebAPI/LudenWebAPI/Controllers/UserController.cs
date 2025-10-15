@@ -1,13 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
-namespace LudenWebAPI.Controllers
+﻿namespace LudenWebAPI.Controllers
 {
     using Application.Abstractions.Interfaces.Services;
     using Entities.Models;
     using Microsoft.AspNetCore.Mvc;
     using System;
-    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     namespace Sonar.Controllers.UserCore
@@ -25,7 +21,7 @@ namespace LudenWebAPI.Controllers
 
             // GET: api/User
             [HttpGet]
-            public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+            public async Task<ActionResult> GetUsers()
             {
                 //var users = await _userService.GetAllUsersAsync();
                 return Ok();
