@@ -13,7 +13,7 @@ namespace Application.Abstractions.Interfaces.Services
         Task<T> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
         Task CreateAsync(T entity);
-        Task<T> UpdateAsync(T entity);
+        Task UpdateAsync(T entity);
         Task DeleteAsync(int id);
         Task DeleteAsync(T entity);
     }

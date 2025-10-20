@@ -27,7 +27,6 @@ namespace Application.Services
             };
 
             await repository.AddAsync(user);
-            await repository.SaveChangesAsync();
 
             return user;
         }
@@ -58,13 +57,11 @@ namespace Application.Services
         {
             user.UpdatedAt = DateTime.UtcNow;
             await repository.UpdateAsync(user);
-            await repository.SaveChangesAsync();
         }
 
         public async Task DeleteUserAsync(int id)
         {
             await repository.RemoveByIdAsync(id);
-            await repository.SaveChangesAsync();
         }
 
         public async Task<bool> UsernameExistsAsync(string username)

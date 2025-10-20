@@ -9,10 +9,6 @@ namespace Application.Services
 {
     public class AuthorizationService(IUserRepository userRepository, IPasswordHasher passwordHasher, IGoogleTokenValidator googleTokenValidator) : IAuthorizationService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly IGoogleTokenValidator _googleTokenValidator;
-
         public async Task<RegisterStatus> RegisterAsync(UserRegisterDTO registerData)
         {
             if (!string.IsNullOrEmpty(registerData.googleJwtToken))
@@ -45,21 +41,22 @@ namespace Application.Services
 
         private async Task<RegisterStatus> RegisterUserWithPasswordAsync(string name, string email, string password)
         {
-            if (await _userRepository.ExistsByEmailAsync(email))
+            if (await userRepository.ExistsByEmailAsync(email))
             {
                 return RegisterStatus.EmailBusy;
             }
 
-            string passwordHash = _passwordHasher.Hash(password);
+            string passwordHash = passwordHasher.Hash(password);
             var user = new User
             {
                 Username = name,
                 Email = email,
                 PasswordHash = passwordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Role = "user"
             };
 
-            await _userRepository.AddAsync(user);
+            await userRepository.AddAsync(user);
             return RegisterStatus.Success;
         }
 
@@ -67,8 +64,8 @@ namespace Application.Services
         {
             try
             {
-                var payload = await _googleTokenValidator.ValidateAsync(googleJwtToken);
-                if (await _userRepository.GetByGoogleIdAsync(payload.Subject) != null)
+                var payload = await googleTokenValidator.ValidateAsync(googleJwtToken);
+                if (await userRepository.GetByGoogleIdAsync(payload.Subject) != null)
                 {
                     return RegisterStatus.EmailBusy;
                 }
@@ -81,7 +78,7 @@ namespace Application.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                await _userRepository.AddAsync(user);
+                await userRepository.AddAsync(user);
                 return RegisterStatus.Success;
             }
             catch (InvalidJwtException)
@@ -92,13 +89,13 @@ namespace Application.Services
 
         private async Task<LoginStatus> LoginUserWithPasswordAsync(string email, string password)
         {
-            if (!await _userRepository.ExistsByEmailAsync(email))
+            if (!await userRepository.ExistsByEmailAsync(email))
             {
                 return LoginStatus.IncorrectEmail;
             }
 
-            string passwordHash = _passwordHasher.Hash(password);
-            bool isPasswordValid = await _userRepository.IsPasswordValidByEmailAsync(email, passwordHash);
+            string passwordHash = passwordHasher.Hash(password);
+            bool isPasswordValid = await userRepository.IsPasswordValidByEmailAsync(email, passwordHash);
 
             return isPasswordValid ? LoginStatus.Success : LoginStatus.IncorrectPassword;
         }
@@ -107,8 +104,8 @@ namespace Application.Services
         {
             try
             {
-                var payload = await _googleTokenValidator.ValidateAsync(googleJwtToken);
-                if (await _userRepository.GetByGoogleIdAsync(payload.Subject) == null)
+                var payload = await googleTokenValidator.ValidateAsync(googleJwtToken);
+                if (await userRepository.GetByGoogleIdAsync(payload.Subject) == null)
                 {
                     return LoginStatus.UnregisteredGoogle;
                 }

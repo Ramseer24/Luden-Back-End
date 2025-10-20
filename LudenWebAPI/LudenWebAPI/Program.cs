@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.Interfaces.Repository;
+﻿using Application.Abstractions.Interfaces;
+using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Application.Services;
 using Entities.Config;
@@ -21,8 +22,8 @@ namespace LudenWebAPI
             builder.Services.AddSingleton(config);
 
             builder.Services.AddDbContext<LudenDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("LudenDbContext") ??
-                      throw new InvalidOperationException("Connection string 'SonarContext' not found.")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
+                      throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
 
             // Add services to the container.
             builder.Services.AddControllers();
@@ -60,10 +61,16 @@ namespace LudenWebAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-
             builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IBillRepository, BillRepository>();
 
+            builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+            builder.Services.AddScoped<ITokenService, BaseTokenService>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+            builder.Services.AddScoped<IBillService, BillService>();
+
+            builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
             WebApplication app = builder.Build();
 

@@ -10,20 +10,13 @@
     {
         [Route("api/[controller]")]
         [ApiController]
-        public class UserController : ControllerBase
+        public class UserController(IUserService userService) : ControllerBase
         {
-            private readonly IUserService _userService;
-
-            public UserController(IUserService userService)
-            {
-                _userService = userService;
-            }
-
             // GET: api/User
             [HttpGet]
             public async Task<ActionResult> GetUsers()
             {
-                //var users = await _userService.GetAllUsersAsync();
+                var users = await userService.GetAllUsersAsync();
                 return Ok();
             }
 
@@ -33,7 +26,7 @@
             {
                 try
                 {
-                    var user = await _userService.GetUserByIdAsync(id);
+                    var user = await userService.GetUserByIdAsync(id);
                     if (user == null)
                     {
                         return NotFound();
@@ -57,7 +50,7 @@
 
                 try
                 {
-                    var user = await _userService.CreateUserAsync(
+                    var user = await userService.CreateUserAsync(
                         userDto.Username,
                         userDto.Email,
                         userDto.Password,
@@ -91,13 +84,13 @@
 
                 try
                 {
-                    var existingUser = await _userService.GetUserByIdAsync(id);
+                    var existingUser = await userService.GetUserByIdAsync(id);
                     if (existingUser == null)
                     {
                         return NotFound();
                     }
 
-                    await _userService.UpdateUserAsync(user);
+                    await userService.UpdateUserAsync(user);
                     return NoContent();
                 }
                 catch (Exception)
@@ -112,13 +105,13 @@
             {
                 try
                 {
-                    var user = await _userService.GetUserByIdAsync(id);
+                    var user = await userService.GetUserByIdAsync(id);
                     if (user == null)
                     {
                         return NotFound();
                     }
 
-                    await _userService.DeleteUserAsync(id);
+                    await userService.DeleteUserAsync(id);
                     return NoContent();
                 }
                 catch (Exception)

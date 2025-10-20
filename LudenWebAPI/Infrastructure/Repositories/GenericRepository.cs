@@ -20,11 +20,13 @@ namespace Infrastructure
             public async Task AddAsync(T entity)
             {
                 await _dbSet.AddAsync(entity);
+                await context.SaveChangesAsync();
             }
 
             public async Task RemoveAsync(T entity)
             {
                 _dbSet.Remove(entity);
+                await context.SaveChangesAsync();
             }
 
             public async Task RemoveByIdAsync(int id)
@@ -34,11 +36,13 @@ namespace Infrastructure
                 {
                     _dbSet.Remove(entity);
                 }
+                await context.SaveChangesAsync();
             }
 
             public async Task UpdateAsync(T entity)
             {
                 _dbSet.Update(entity);
+                await context.SaveChangesAsync();
             }
 
             public async Task<T> GetByIdAsync(int id)
@@ -49,11 +53,6 @@ namespace Infrastructure
             public async Task<IEnumerable<T>> GetAllAsync()
             {
                 return await _dbSet.AsNoTracking().ToListAsync();
-            }
-
-            public async Task SaveChangesAsync()
-            {
-                await context.SaveChangesAsync();
             }
         }
     }

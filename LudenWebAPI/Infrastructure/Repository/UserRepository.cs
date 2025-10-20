@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
+using Infrastructure.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,55 +10,38 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Repository
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository(LudenDbContext context) : GenericRepository<User>(context), IUserRepository
     {
-        private readonly DbContext _context;
-
-        public UserRepository(DbContext context)
+        public async Task<bool> ExistsByEmailAsync(string email)
         {
-            _context = context;
+            return await context.Users
+                .AnyAsync(u => u.Email == email);
         }
 
-        public async Task AddAsync(User entity)
+        public async Task<User?> GetByEmailAsync(string email)
         {
-            await _context.Set<User>().AddAsync(entity);
+            return await context.Users
+                .Include(u => u.Bills)
+                .FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task RemoveAsync(User entity)
+        public async Task<User?> GetByGoogleIdAsync(string googleId)
         {
-            _context.Set<User>().Remove(entity);
-            await Task.CompletedTask;
+            return await context.Users
+                .Include(u => u.Bills)
+                .FirstOrDefaultAsync(u => u.GoogleId == googleId);
         }
 
-        public async Task RemoveByIdAsync(int id)
+        public async Task<bool> IsPasswordValidByEmailAsync(string email, string passwordHash)
         {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                _context.Set<User>().Remove(entity);
-            }
-            await Task.CompletedTask;
-        }
+            var user = await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email);
 
-        public async Task UpdateAsync(User entity)
-        {
-            _context.Set<User>().Update(entity);
-            await Task.CompletedTask;
-        }
+            if (user == null)
+                return false;
 
-        public async Task<User> GetByIdAsync(int id)
-        {
-            return await _context.Set<User>().FindAsync(id);
-        }
-
-        public async Task<IEnumerable<User>> GetAllAsync()
-        {
-            return await _context.Set<User>().ToListAsync();
-        }
-
-        public async Task SaveChangesAsync()
-        {
-            await _context.SaveChangesAsync();
+            return user.PasswordHash == passwordHash;
         }
     }
 }

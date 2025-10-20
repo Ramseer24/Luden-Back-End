@@ -16,6 +16,5 @@ namespace Application.Abstractions.Interfaces.Repository
         Task UpdateAsync(T entity);                 // ✅ Реализовано
         Task<T> GetByIdAsync(int id);               // ✅ Реализовано
         Task<IEnumerable<T>> GetAllAsync();         // ✅ Реализовано
-        Task SaveChangesAsync();
     }
 }

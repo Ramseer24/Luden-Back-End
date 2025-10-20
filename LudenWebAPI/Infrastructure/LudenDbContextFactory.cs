@@ -21,14 +21,14 @@ namespace Infrastructure
                 .Build();
 
             var optionsBuilder = new DbContextOptionsBuilder<LudenDbContext>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            var connectionString = configuration.GetConnectionString("LudenDbContext");
 
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new InvalidOperationException($"Строка подключения 'DefaultConnection' не была найдена. Проверьте, что путь '{apiProjectPath}' к appsettings.json указан верно.");
             }
 
-            optionsBuilder.UseNpgsql(connectionString);
+            optionsBuilder.UseSqlite(connectionString);
 
             return new LudenDbContext(optionsBuilder.Options);
         }

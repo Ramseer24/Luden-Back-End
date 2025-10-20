@@ -7,20 +7,13 @@ namespace LudenWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BillController : ControllerBase
+    public class BillController(IBillService billService) : ControllerBase
     {
-        private readonly IBillService _billService;
-
-        public BillController(IBillService billService)
-        {
-            _billService = billService;
-        }
-
         // GET: api/Bill
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Bill>>> GetBills()
         {
-            var bills = await _billService.GetAllAsync();
+            var bills = await billService.GetAllAsync();
             return Ok(bills);
         }
 
@@ -30,7 +23,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var bill = await _billService.GetByIdAsync(id);
+                var bill = await billService.GetByIdAsync(id);
                 if (bill == null)
                 {
                     return NotFound();
@@ -54,7 +47,7 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                var bill = await _billService.CreateBillAsync(
+                var bill = await billService.CreateBillAsync(
                     billDto.UserId,
                     billDto.TotalAmount,
                     billDto.Status
@@ -87,13 +80,13 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                var existingBill = await _billService.GetByIdAsync(id);
+                var existingBill = await billService.GetByIdAsync(id);
                 if (existingBill == null)
                 {
                     return NotFound();
                 }
 
-                await _billService.UpdateAsync(bill);
+                await billService.UpdateAsync(bill);
                 return NoContent();
             }
             catch (Exception)
@@ -108,13 +101,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var bill = await _billService.GetByIdAsync(id);
+                var bill = await billService.GetByIdAsync(id);
                 if (bill == null)
                 {
                     return NotFound();
                 }
 
-                await _billService.DeleteAsync(id);
+                await billService.DeleteAsync(id);
                 return NoContent();
             }
             catch (Exception)

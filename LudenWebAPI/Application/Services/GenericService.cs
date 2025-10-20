@@ -8,7 +8,7 @@ public class GenericService<T>(IGenericRepository<T> repository) : IGenericServi
 {
     public async Task CreateAsync(T entity)
     {
-        return await repository.AddAsync(entity);
+        await repository.AddAsync(entity);
     }
 
     public async Task DeleteAsync(int id)
@@ -31,8 +31,8 @@ public class GenericService<T>(IGenericRepository<T> repository) : IGenericServi
         return await repository.GetByIdAsync(id);
     }
 
-    public async Task<T> UpdateAsync(T entity)
+    public async Task UpdateAsync(T entity)
     {
-        return await repository.UpdateAsync(entity);
+        await repository.UpdateAsync(entity);
     }
 }
