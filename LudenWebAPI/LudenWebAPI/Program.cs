@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Application.Services;
+using Entities.Config;
 using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,6 +15,11 @@ namespace LudenWebAPI
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            Config config = new Config();
+            builder.Configuration.Bind(config);
+            builder.Services.AddSingleton(config);
+
             builder.Services.AddDbContext<LudenDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("LudenDbContext") ??
                       throw new InvalidOperationException("Connection string 'SonarContext' not found.")));
