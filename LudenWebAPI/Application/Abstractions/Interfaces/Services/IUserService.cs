@@ -2,7 +2,7 @@
 
 namespace Application.Abstractions.Interfaces.Services
 {
-    public interface IUserService
+    public interface IUserService : IGenericService<User>
     {
         Task<User> CreateUserAsync(string username, string email, string password, string role = "User");
         Task<User> GetUserByIdAsync(int id);

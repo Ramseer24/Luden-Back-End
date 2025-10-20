@@ -6,11 +6,10 @@ using System.Text;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository) : GenericService<User>(repository) , IUserService
     {
         public async Task<User> CreateUserAsync(string username, string email, string password, string role = "User")
         {
-            // Проверка существования
             if (await UsernameExistsAsync(username))
                 throw new InvalidOperationException($"Username '{username}' already exists");
 

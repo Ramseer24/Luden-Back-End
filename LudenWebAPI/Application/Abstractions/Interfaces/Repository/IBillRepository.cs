@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Application.Abstractions.Interfaces.Repository
 {
-    public interface IUserRepository : IGenericRepository<User>
+    public interface IBillRepository : IGenericRepository<Bill>
     {
-        // Add any User-specific repository methods here if needed
+        // Add any Bill-specific repository methods here if needed
     }
 }
