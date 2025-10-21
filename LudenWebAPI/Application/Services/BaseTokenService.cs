@@ -20,8 +20,6 @@ namespace Application.Services
         private readonly string _issuer = config.Jwt.Issuer;
         private readonly string _audience = config.Jwt.Audience;
         private readonly int _tokenExpiresHours = config.Jwt.TokenExpiresHours;
-        private readonly IUserRepository _userRepository;
-        private readonly IGoogleTokenValidator _googleTokenValidator;
 
 
         public async Task<string?> GenerateToken(UserLoginDTO loginData)
@@ -31,13 +29,13 @@ namespace Application.Services
 
             if (loginData.Email != null)
             {
-                var userByEmail = await _userRepository.GetByEmailAsync(loginData.Email);
+                var userByEmail = await userRepository.GetByEmailAsync(loginData.Email);
                 UserId = userByEmail?.Id;
             }
             else if (loginData.googleJwtToken != null)
             {
-                string Id = (await _googleTokenValidator.ValidateAsync(loginData.googleJwtToken)).Subject;
-                var userByGoogle = await _userRepository.GetByGoogleIdAsync(Id);
+                string Id = (await googleTokenValidator.ValidateAsync(loginData.googleJwtToken)).Subject;
+                var userByGoogle = await userRepository.GetByGoogleIdAsync(Id);
                 UserId = userByGoogle?.Id;
             }
             else
