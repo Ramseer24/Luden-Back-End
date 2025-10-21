@@ -1,4 +1,5 @@
-﻿using Entities.Models;
+﻿using Entities.Enums;
+using Entities.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace Application.Abstractions.Interfaces.Services
 {
     public interface IBillService : IGenericService<Bill>
     {
-        Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status);
+        Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status);
     }
 }

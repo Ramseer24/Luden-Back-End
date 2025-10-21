@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
+using Entities.Enums;
 using Entities.Models;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace Application.Services
     public class BillService(IBillRepository repository,IUserService userService) : GenericService<Bill>(repository), IBillService
     {
        
-        public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status)
+        public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status)
         {
             var user = await userService.GetByIdAsync(userId);
             if (user == null)
@@ -24,8 +25,9 @@ namespace Application.Services
             {
                 User = user,
                 TotalAmount = totalAmount,
-                Status = string.IsNullOrEmpty(status) ? "pending" : status,
-                CreatedAt = DateTime.UtcNow
+                Status = status,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.Now
             };
 
             await repository.AddAsync(bill);

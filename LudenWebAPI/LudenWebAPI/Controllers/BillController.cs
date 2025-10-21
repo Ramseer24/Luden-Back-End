@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.Interfaces.Services;
+using Entities.Enums;
 using Entities.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -52,7 +53,7 @@ namespace LudenWebAPI.Controllers
                     billDto.TotalAmount,
                     billDto.Status
                 );
-                return Ok();//CreatedAtAction(nameof(GetBill), new { id = bill.Id }, bill);
+                return Ok(bill);//CreatedAtAction(nameof(GetBill), new { id = bill.Id }, bill);
             }
             catch (InvalidOperationException ex)
             {
@@ -121,6 +122,6 @@ namespace LudenWebAPI.Controllers
     {
         public int UserId { get; set; }
         public decimal TotalAmount { get; set; }
-        public string Status { get; set; } = "pending";
+        public BillStatus Status { get; set; }
     }
 }
