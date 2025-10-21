@@ -4,7 +4,7 @@ namespace Application.Abstractions.Interfaces.Services
 {
     public interface IUserService : IGenericService<User>
     {
-        Task<User> CreateUserAsync(string username, string email, string password, string role = "User");
+       //Task<User> CreateUserAsync(string username, string email, string password, string role = "User");
         Task<User> GetUserByIdAsync(int id);
         Task<User> GetUserByUsernameAsync(string username);
         Task<User> GetUserByEmailAsync(string email);

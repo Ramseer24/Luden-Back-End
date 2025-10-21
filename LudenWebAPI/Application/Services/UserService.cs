@@ -8,28 +8,28 @@ namespace Application.Services
 {
     public class UserService(IUserRepository repository) : GenericService<User>(repository) , IUserService
     {
-        public async Task<User> CreateUserAsync(string username, string email, string password, string role = "User")
-        {
-            if (await UsernameExistsAsync(username))
-                throw new InvalidOperationException($"Username '{username}' already exists");
+        //public async Task<User> CreateUserAsync(string username, string email, string password, string role = "User")
+        //{
+        //    if (await UsernameExistsAsync(username))
+        //        throw new InvalidOperationException($"Username '{username}' already exists");
 
-            if (await EmailExistsAsync(email))
-                throw new InvalidOperationException($"Email '{email}' already exists");
+        //    if (await EmailExistsAsync(email))
+        //        throw new InvalidOperationException($"Email '{email}' already exists");
 
-            var user = new User
-            {
-                Username = username,
-                Email = email,
-                PasswordHash = HashPassword(password),
-                Role = role,
-                CreatedAt = DateTime.UtcNow,
-                Bills = new List<Bill>()
-            };
+        //    var user = new User
+        //    {
+        //        Username = username,
+        //        Email = email,
+        //        PasswordHash = HashPassword(password),
+        //        Role = role,
+        //        CreatedAt = DateTime.UtcNow,
+        //        Bills = new List<Bill>()
+        //    };
 
-            await repository.AddAsync(user);
+        //    await repository.AddAsync(user);
 
-            return user;
-        }
+        //    return user;
+        //}
 
         public async Task<User> GetUserByIdAsync(int id)
         {

@@ -39,66 +39,6 @@
                 }
             }
 
-            // POST: api/User
-            [HttpPost]
-            public async Task<ActionResult<User>> PostUser([FromBody] UserCreateDto userDto)
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                try
-                {
-                    var user = await userService.CreateUserAsync(
-                        userDto.Username,
-                        userDto.Email,
-                        userDto.Password,
-                        userDto.Role
-                    );
-                    return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return BadRequest(ex.Message);
-                }
-                catch (Exception)
-                {
-                    return StatusCode(500, "An error occurred while creating the user.");
-                }
-            }
-
-            // PUT: api/User/5
-            [HttpPut("{id}")]
-            public async Task<IActionResult> PutUser(int id, [FromBody] User user)
-            {
-                if (id != user.Id)
-                {
-                    return BadRequest("User ID mismatch");
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                try
-                {
-                    var existingUser = await userService.GetUserByIdAsync(id);
-                    if (existingUser == null)
-                    {
-                        return NotFound();
-                    }
-
-                    await userService.UpdateUserAsync(user);
-                    return NoContent();
-                }
-                catch (Exception)
-                {
-                    return StatusCode(500, "An error occurred while updating the user.");
-                }
-            }
-
             // DELETE: api/User/5
             [HttpDelete("{id}")]
             public async Task<IActionResult> DeleteUser(int id)
