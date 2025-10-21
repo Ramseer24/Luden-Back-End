@@ -17,7 +17,7 @@
             public async Task<ActionResult> GetUsers()
             {
                 var users = await userService.GetAllUsersAsync();
-                return Ok();
+                return Ok(users);
             }
 
             // GET: api/User/5
