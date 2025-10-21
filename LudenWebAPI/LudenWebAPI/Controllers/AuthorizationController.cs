@@ -12,7 +12,6 @@ namespace LudenWebAPI.Controllers
     [ApiController]
     public class AuthorizationController(ITokenService _tokenService, IAuthorizationService _authorizationService) : ControllerBase
     {
-        [HttpPost]
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDTO registerData)
         {
@@ -25,8 +24,7 @@ namespace LudenWebAPI.Controllers
             return Ok(result.ToString());
         }
 
-        [HttpGet]
-        [HttpPost("login")]
+        [HttpGet("login")]
         public async Task<IActionResult> Login(UserLoginDTO loginData)
         {
             var result = await _authorizationService.LoginUserAsync(loginData);
