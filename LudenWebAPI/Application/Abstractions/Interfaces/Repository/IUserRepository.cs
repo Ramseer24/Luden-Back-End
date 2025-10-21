@@ -12,6 +12,7 @@ namespace Application.Abstractions.Interfaces.Repository
         Task<bool> ExistsByEmailAsync(string email);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByGoogleIdAsync(string googleId);
-        Task<bool> IsPasswordValidByEmailAsync(string email, string passwordHash); 
+        Task<bool> IsPasswordValidByEmailAsync(string email, string passwordHash);
+        Task<User> GetUserWithBillsAsync(int id);
     }
 }
