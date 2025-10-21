@@ -31,5 +31,12 @@ namespace Infrastructure.Repositories
 
             return user.PasswordHash == passwordHash;
         }
+        
+        public async Task<User> GetUserWithBillsAsync(int id)
+        {
+            return await context.Users
+                .Include(u => u.Bills)
+                .FirstOrDefaultAsync(u => u.Id == id);
+        }
     }
 }
