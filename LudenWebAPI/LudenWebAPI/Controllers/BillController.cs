@@ -47,12 +47,12 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                var bill = await billService.CreateBillAsync(
+                Bill bill = await billService.CreateBillAsync(
                     billDto.UserId,
                     billDto.TotalAmount,
                     billDto.Status
                 );
-                return CreatedAtAction(nameof(GetBill), new { id = bill.Id }, bill);
+                return Ok();//CreatedAtAction(nameof(GetBill), new { id = bill.Id }, bill);
             }
             catch (InvalidOperationException ex)
             {

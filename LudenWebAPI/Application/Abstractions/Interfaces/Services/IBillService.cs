@@ -9,6 +9,6 @@ namespace Application.Abstractions.Interfaces.Services
 {
     public interface IBillService : IGenericService<Bill>
     {
-        Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status = "pending");
+        Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status);
     }
 }

@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace Application.Services
 {
-    public class BillService(IBillRepository repository) : GenericService<Bill>(repository), IBillService
+    public class BillService(IBillRepository repository,IUserService userService) : GenericService<Bill>(repository), IBillService
     {
        
-        public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status = "pending")
+        public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, string status)
         {
-            var user = await repository.GetByIdAsync(userId);
+            var user = await userService.GetByIdAsync(userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID '{userId}' does not exist");
@@ -22,9 +22,9 @@ namespace Application.Services
 
             var bill = new Bill
             {
-                UserId = userId,
+                User = user,
                 TotalAmount = totalAmount,
-                Status = status,
+                Status = string.IsNullOrEmpty(status) ? "pending" : status,
                 CreatedAt = DateTime.UtcNow
             };
 
