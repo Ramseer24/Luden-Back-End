@@ -26,7 +26,7 @@ public class GenericService<T>(IGenericRepository<T> repository) : IGenericServi
         return await repository.GetAllAsync();
     }
 
-    public async Task<T> GetByIdAsync(int id)
+    public async Task<T?> GetByIdAsync(int id)
     {
         return await repository.GetByIdAsync(id);
     }

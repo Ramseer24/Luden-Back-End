@@ -6,7 +6,7 @@ using Entities.Models;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository, IBillService billService, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
     {
         public async Task<User> GetUserByIdAsync(int id)
         {
@@ -63,9 +63,20 @@ namespace Application.Services
             await repository.UpdateAsync(user);
         }
 
-        public Task<UserProfileDTO> GetuserProfileAsync()
+        public async Task<UserProfileDTO> GetUserProfileAsync(int id)
         {
-            throw new NotImplementedException();
+            User? user = await repository.GetByIdAsync(id);
+            ICollection<Bill> bills = await billService.GetUserBillsByIdAsync(id);
+            UserProfileDTO dto = new()
+            {
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                Bills = bills
+            };
+            return dto;
         }
     }
 }

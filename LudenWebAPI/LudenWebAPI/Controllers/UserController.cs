@@ -61,13 +61,14 @@ namespace LudenWebAPI.Controllers
         [HttpPatch("update")]
         public async Task<IActionResult> UdpateUserAsync([FromBody] UpdateUserDTO updateUserDTO)
         {
-            return Ok(userService.UpdateUserAsync(updateUserDTO));
+            await userService.UpdateUserAsync(updateUserDTO);
+            return Ok();
         }
-        //[HttpGet("profile/{id}")]
-        //public async Task<UserProfileDTO> GetUserProfile()
-        //{
-
-        //}
+        [HttpGet("profile/{id}")]
+        public async Task<UserProfileDTO> GetUserProfile(int id)
+        {
+            return await userService.GetUserProfileAsync(id);
+        }
     }
 }
 

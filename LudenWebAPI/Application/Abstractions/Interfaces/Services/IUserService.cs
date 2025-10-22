@@ -14,6 +14,6 @@ namespace Application.Abstractions.Interfaces.Services
         Task<bool> UsernameExistsAsync(string username);
         Task<bool> EmailExistsAsync(string email);
         Task UpdateUserAsync(UpdateUserDTO dto);
-        Task<UserProfileDTO> GetuserProfileAsync();
+        Task<UserProfileDTO> GetUserProfileAsync(int id);
     }
 }

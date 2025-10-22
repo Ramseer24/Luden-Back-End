@@ -1,14 +1,10 @@
 ﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Abstractions.Interfaces.Repository
 {
     public interface IBillRepository : IGenericRepository<Bill>
     {
         // Add any Bill-specific repository methods here if needed
+        ICollection<Bill> GetUserBillsByIdAsync(int id);
     }
 }

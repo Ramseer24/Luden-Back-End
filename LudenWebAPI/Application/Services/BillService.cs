@@ -2,17 +2,11 @@
 using Application.Abstractions.Interfaces.Services;
 using Entities.Enums;
 using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Services
 {
-    public class BillService(IBillRepository repository,IUserService userService) : GenericService<Bill>(repository), IBillService
+    public class BillService(IBillRepository repository, IUserService userService) : GenericService<Bill>(repository), IBillService
     {
-       
         public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status)
         {
             var user = await userService.GetByIdAsync(userId);
@@ -35,9 +29,9 @@ namespace Application.Services
             return bill;
         }
 
-        Task IGenericService<Bill>.CreateAsync(Bill entity)
+        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
         {
-            return CreateAsync(entity);
+            return repository.GetUserBillsByIdAsync(id);
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Infrastructure
                 await context.SaveChangesAsync();
             }
 
-            public async Task<T> GetByIdAsync(int id)
+            public async Task<T?> GetByIdAsync(int id)
             {
                 return await _dbSet.FindAsync(id);
             }

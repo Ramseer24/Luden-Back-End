@@ -1,10 +1,4 @@
 ﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Abstractions.Interfaces.Repository
 {
@@ -14,7 +8,7 @@ namespace Application.Abstractions.Interfaces.Repository
         Task RemoveAsync(T entity);                 // ✅ Реализовано  
         Task RemoveByIdAsync(int id);               // ✅ Реализовано
         Task UpdateAsync(T entity);                 // ✅ Реализовано
-        Task<T> GetByIdAsync(int id);               // ✅ Реализовано
+        Task<T?> GetByIdAsync(int id);               // ✅ Реализовано
         Task<IEnumerable<T>> GetAllAsync();         // ✅ Реализовано
     }
 }
