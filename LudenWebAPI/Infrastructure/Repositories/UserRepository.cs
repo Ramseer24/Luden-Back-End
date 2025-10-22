@@ -31,12 +31,9 @@ namespace Infrastructure.Repositories
 
             return user.PasswordHash == passwordHash;
         }
-        
-        public async Task<User> GetUserWithBillsAsync(int id)
+        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
         {
-            return await context.Users
-                .Include(u => u.Bills)
-                .FirstOrDefaultAsync(u => u.Id == id);
+            return context.Bills.Include(b => b.BillItems).ThenInclude(bi => bi.Product).Where(b => b.UserId == id).ToList();
         }
     }
 }

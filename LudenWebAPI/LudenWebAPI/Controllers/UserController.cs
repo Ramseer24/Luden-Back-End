@@ -24,7 +24,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var user = await userService.GetUserByIdAsync(id);
+                var user = await userService.GetByIdAsync(id);
                 if (user == null)
                 {
                     return NotFound();
@@ -43,13 +43,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var user = await userService.GetUserByIdAsync(id);
+                var user = await userService.GetByIdAsync(id);
                 if (user == null)
                 {
                     return NotFound();
                 }
 
-                await userService.DeleteUserAsync(id);
+                await userService.DeleteAsync(id);
                 return NoContent();
             }
             catch (Exception)

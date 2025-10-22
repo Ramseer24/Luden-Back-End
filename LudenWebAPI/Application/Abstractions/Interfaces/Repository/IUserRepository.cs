@@ -1,9 +1,4 @@
 ﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Abstractions.Interfaces.Repository
 {
@@ -13,6 +8,6 @@ namespace Application.Abstractions.Interfaces.Repository
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByGoogleIdAsync(string googleId);
         Task<bool> IsPasswordValidByEmailAsync(string email, string passwordHash);
-        Task<User> GetUserWithBillsAsync(int id);
+        Task<ICollection<Bill>> GetUserBillsByIdAsync(int id);
     }
 }

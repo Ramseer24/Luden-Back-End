@@ -6,13 +6,8 @@ using Entities.Models;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository, IBillService billService, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
     {
-        public async Task<User> GetUserByIdAsync(int id)
-        {
-            return await repository.GetByIdAsync(id);
-        }
-
         public async Task<User> GetUserByUsernameAsync(string username)
         {
             var users = await repository.GetAllAsync();
@@ -28,17 +23,6 @@ namespace Application.Services
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             return await repository.GetAllAsync();
-        }
-
-        public async Task UpdateUserAsync(User user)
-        {
-            user.UpdatedAt = DateTime.UtcNow;
-            await repository.UpdateAsync(user);
-        }
-
-        public async Task DeleteUserAsync(int id)
-        {
-            await repository.RemoveByIdAsync(id);
         }
 
         public async Task<bool> UsernameExistsAsync(string username)
@@ -62,11 +46,14 @@ namespace Application.Services
             user.UpdatedAt = DateTime.UtcNow;
             await repository.UpdateAsync(user);
         }
-
+        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
+        {
+            return await repository.GetUserBillsByIdAsync(id);
+        }
         public async Task<UserProfileDTO> GetUserProfileAsync(int id)
         {
             User? user = await repository.GetByIdAsync(id);
-            ICollection<Bill> bills = await billService.GetUserBillsByIdAsync(id);
+            ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
             UserProfileDTO dto = new()
             {
                 Username = user.Username,

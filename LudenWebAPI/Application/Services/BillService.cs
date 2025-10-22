@@ -29,9 +29,6 @@ namespace Application.Services
             return bill;
         }
 
-        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
-        {
-            return repository.GetUserBillsByIdAsync(id);
-        }
+
     }
 }

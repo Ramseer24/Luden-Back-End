@@ -6,6 +6,6 @@ namespace Application.Abstractions.Interfaces.Services
     public interface IBillService : IGenericService<Bill>
     {
         Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status);
-        Task<ICollection<Bill>> GetUserBillsByIdAsync(int id);
+
     }
 }
