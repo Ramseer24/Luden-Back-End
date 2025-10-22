@@ -1,10 +1,10 @@
-﻿using Entities.Models;
+﻿using Application.DTOs.UserDTOs;
+using Entities.Models;
 
 namespace Application.Abstractions.Interfaces.Services
 {
     public interface IUserService : IGenericService<User>
     {
-       //Task<User> CreateUserAsync(string username, string email, string password, string role = "User");
         Task<User> GetUserByIdAsync(int id);
         Task<User> GetUserByUsernameAsync(string username);
         Task<User> GetUserByEmailAsync(string email);
@@ -13,5 +13,7 @@ namespace Application.Abstractions.Interfaces.Services
         Task DeleteUserAsync(int id);
         Task<bool> UsernameExistsAsync(string username);
         Task<bool> EmailExistsAsync(string email);
+        Task UpdateUserAsync(UpdateUserDTO dto);
+        Task<UserProfileDTO> GetuserProfileAsync();
     }
 }

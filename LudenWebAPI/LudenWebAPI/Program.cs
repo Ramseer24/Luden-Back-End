@@ -17,7 +17,7 @@ namespace LudenWebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            Config config = new Config();
+            Config config = new();
             builder.Configuration.Bind(config);
             builder.Services.AddSingleton(config);
 
@@ -58,12 +58,11 @@ namespace LudenWebAPI
                     };
                 });
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            //builder.Services.AddEndpointsApiExplorer();
+            //builder.Services.AddSwaggerGen();
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IBillRepository, BillRepository>();
-            builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
             builder.Services.AddScoped<ITokenService, BaseTokenService>();
             builder.Services.AddScoped<IUserService, UserService>();

@@ -1,36 +1,13 @@
-﻿using Application.Abstractions.Interfaces.Repository;
+﻿using Application.Abstractions.Interfaces;
+using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
+using Application.DTOs.UserDTOs;
 using Entities.Models;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository) : GenericService<User>(repository) , IUserService
+    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
     {
-        //public async Task<User> CreateUserAsync(string username, string email, string password, string role = "User")
-        //{
-        //    if (await UsernameExistsAsync(username))
-        //        throw new InvalidOperationException($"Username '{username}' already exists");
-
-        //    if (await EmailExistsAsync(email))
-        //        throw new InvalidOperationException($"Email '{email}' already exists");
-
-        //    var user = new User
-        //    {
-        //        Username = username,
-        //        Email = email,
-        //        PasswordHash = HashPassword(password),
-        //        Role = role,
-        //        CreatedAt = DateTime.UtcNow,
-        //        Bills = new List<Bill>()
-        //    };
-
-        //    await repository.AddAsync(user);
-
-        //    return user;
-        //}
-
         public async Task<User> GetUserByIdAsync(int id)
         {
             return await repository.GetByIdAsync(id);
@@ -76,5 +53,19 @@ namespace Application.Services
             return user != null;
         }
 
+        public async Task UpdateUserAsync(UpdateUserDTO dto)
+        {
+            User user = await repository.GetByIdAsync(dto.Id);
+            user.Username = dto.Username;
+            user.Email = dto.Email;
+            user.PasswordHash = passwordHasher.Hash(dto.Password);
+            user.UpdatedAt = DateTime.UtcNow;
+            await repository.UpdateAsync(user);
+        }
+
+        public Task<UserProfileDTO> GetuserProfileAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

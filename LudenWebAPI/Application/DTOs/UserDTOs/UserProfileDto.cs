@@ -1,22 +1,17 @@
-﻿using Entities.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Entities.Models;
 
 namespace Application.DTOs.UserDTOs
 {
-    public class UserProfileDto
+    public class UserProfileDTO
     {
         public string Username { get; set; }
         public string Email { get; set; }
         public string Role { get; set; }
-        public List<BillDto> Bills { get; set; } = new List<BillDto>();
-    }
-    public class BillDto
-    {
-        public decimal TotalAmount { get; set; }
-        public BillStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+
+        public ICollection<Bill> Bills { get; set; }
+        public ICollection<Product> Products { get; set; }
     }
 }
