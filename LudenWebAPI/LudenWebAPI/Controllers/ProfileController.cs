@@ -31,11 +31,7 @@ namespace LudenWebAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> SetUserProfile(int id, [FromBody] UserProfileDto profileDto)
         {
-            if (id != profileDto.Id)
-            {
-                return BadRequest("Profile ID mismatch");
-            }
-
+            
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -43,7 +39,7 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                await profileService.SetUserProfileAsync(profileDto);
+                await profileService.SetUserProfileAsync(id, profileDto);
                 return NoContent();
             }
             catch (InvalidOperationException ex)

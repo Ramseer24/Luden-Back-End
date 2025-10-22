@@ -10,6 +10,6 @@ namespace Application.Abstractions.Interfaces.Services
     public interface IProfileService
     {
         Task<UserProfileDto> GetUserProfileAsync(int userId);
-        Task SetUserProfileAsync(UserProfileDto dto);
+        Task SetUserProfileAsync(int id, UserProfileDto dto);
     }
 }

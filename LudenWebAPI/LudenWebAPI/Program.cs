@@ -63,7 +63,7 @@ namespace LudenWebAPI
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IBillRepository, BillRepository>();
-
+            builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
             builder.Services.AddScoped<ITokenService, BaseTokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
