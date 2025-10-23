@@ -65,5 +65,10 @@ namespace Application.Services
             };
             return dto;
         }
+
+        public async Task<User?> GetByGoogleIdAsync(string googleId)
+        {
+            return await repository.GetByGoogleIdAsync(googleId);
+        }
     }
 }

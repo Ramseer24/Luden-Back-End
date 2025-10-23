@@ -3,14 +3,12 @@ using Application.Abstractions.Interfaces.Services;
 using Application.DTOs.UserDTOs;
 using Entities.Models;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace LudenWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthorizationController(ITokenService _tokenService, IAuthorizationService _authorizationService) : ControllerBase
+    public class AuthorizationController(ITokenService _tokenService, IAuthorizationService _authorizationService, IUserService userService) : ControllerBase
     {
         [HttpPost("register")]
         public async Task<IActionResult> Register(UserRegisterDTO registerData)
@@ -32,9 +30,14 @@ namespace LudenWebAPI.Controllers
             {
                 return BadRequest(result.ToString());
             }
-
+            User? user;
+            if (!string.IsNullOrEmpty(loginData.googleJwtToken))
+                user = await userService.GetByGoogleIdAsync(loginData.googleJwtToken);
+            else
+                user = await userService.GetUserByEmailAsync(loginData.Email);
             var token = await _tokenService.GenerateToken(loginData);
-            return Ok(new { token });
+
+            return Ok(user);
         }
     }
 }
