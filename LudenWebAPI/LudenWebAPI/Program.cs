@@ -79,7 +79,7 @@ namespace LudenWebAPI
 
             app.UseRouting();
 
-            app.UseCors("ArtemRomanovich");
+            app.UseCors("ArtemPetrenko");
 
             app.UseAuthentication();
             app.UseAuthorization();

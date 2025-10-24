@@ -1,6 +1,8 @@
-﻿using Application.Abstractions.Interfaces.Services;
+﻿using Application.Abstractions.Interfaces;
+using Application.Abstractions.Interfaces.Services;
 using Application.DTOs.UserDTOs;
 using Entities.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LudenWebAPI.Controllers
@@ -8,7 +10,8 @@ namespace LudenWebAPI.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController(IUserService userService) : ControllerBase
+    [Authorize]
+    public class UserController(IUserService userService, ITokenService tokenService) : ControllerBase
     {
         // GET: api/User
         [HttpGet]
@@ -68,6 +71,24 @@ namespace LudenWebAPI.Controllers
         public async Task<UserProfileDTO> GetUserProfile(int id)
         {
             return await userService.GetUserProfileAsync(id);
+        }
+
+        // GET: api/User/profile - получение профиля по токену авторизации
+        [HttpGet("profile")]
+        public async Task<ActionResult<UserProfileDTO>> GetCurrentUserProfile()
+        {
+            try
+            {
+                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var userId = tokenService.GetUserIdFromToken(token);
+                var profile = await userService.GetUserProfileAsync(userId);
+
+                return Ok(profile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
         }
     }
 }

@@ -22,22 +22,22 @@ namespace LudenWebAPI.Controllers
             return Ok(result.ToString());
         }
 
-        [HttpGet("login")]
-        public async Task<IActionResult> Login(UserLoginDTO loginData)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginDTO loginData)
         {
             var result = await _authorizationService.LoginUserAsync(loginData);
             if (result != LoginStatus.Success)
             {
                 return BadRequest(result.ToString());
             }
-            User? user;
-            if (!string.IsNullOrEmpty(loginData.googleJwtToken))
-                user = await userService.GetByGoogleIdAsync(loginData.googleJwtToken);
-            else
-                user = await userService.GetUserByEmailAsync(loginData.Email);
+            //User? user;
+            //if (!string.IsNullOrEmpty(loginData.googleJwtToken))
+            //    user = await userService.GetByGoogleIdAsync(loginData.googleJwtToken);
+            //else
+            //    user = await userService.GetUserByEmailAsync(loginData.Email);
             var token = await _tokenService.GenerateToken(loginData);
 
-            return Ok(user);
+            return Ok(new { token });
         }
     }
 }

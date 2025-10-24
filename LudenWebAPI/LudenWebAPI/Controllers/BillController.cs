@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Interfaces.Services;
 using Entities.Enums;
 using Entities.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace LudenWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BillController(IBillService billService) : ControllerBase
     {
         // GET: api/Bill

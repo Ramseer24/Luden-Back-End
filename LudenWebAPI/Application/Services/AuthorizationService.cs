@@ -47,6 +47,13 @@ namespace Application.Services
             }
 
             string passwordHash = passwordHasher.Hash(password);
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                var atIndex = email.IndexOf('@');
+                name = atIndex > 0 ? email.Substring(0, atIndex) : email;
+            }
+
             var user = new User
             {
                 Username = name,
