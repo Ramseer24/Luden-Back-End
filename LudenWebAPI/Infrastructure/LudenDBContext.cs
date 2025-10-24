@@ -22,6 +22,8 @@ namespace Infrastructure
         public DbSet<Bill> Bills { get; set; }
         public DbSet<BillItem> BillItems { get; set; }
         public DbSet<File> Files { get; set; }
+        public DbSet<PhotoFile> PhotoFiles { get; set; }
+        public DbSet<ProductFile> ProductFiles { get; set; }
         public DbSet<License> Licenses { get; set; }
 
         public LudenDbContext(DbContextOptions<LudenDbContext> options) : base(options)
@@ -59,8 +61,26 @@ namespace Infrastructure
             modelBuilder.Entity<License>()
                 .Property(l => l.Status);
 
-            ;
+            // Настройка наследования для File (Table Per Hierarchy - TPH)
+            modelBuilder.Entity<File>()
+                .HasDiscriminator<string>("FileCategory")
+                .HasValue<PhotoFile>("Photo")
+                .HasValue<ProductFile>("Product");
+
+            // Настройка связи User -> PhotoFile (аватар)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.AvatarFile)
+                .WithOne(pf => pf.User)
+                .HasForeignKey<PhotoFile>(pf => pf.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Настройка связи Product -> ProductFile
+            modelBuilder.Entity<ProductFile>()
+                .HasOne(pf => pf.Product)
+                .WithMany(p => p.Files)
+                .HasForeignKey(pf => pf.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
-    
 }

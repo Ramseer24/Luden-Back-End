@@ -7,6 +7,7 @@ using Infrastructure;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 namespace LudenWebAPI
@@ -63,16 +64,32 @@ namespace LudenWebAPI
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IBillRepository, BillRepository>();
+            builder.Services.AddScoped<IFileRepository, FileRepository>();
             builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
             builder.Services.AddScoped<ITokenService, BaseTokenService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
             builder.Services.AddScoped<IBillService, BillService>();
+            builder.Services.AddScoped<IFileService, FileService>();
 
             builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
             WebApplication app = builder.Build();
 
+            // Настройка статических файлов для загрузок
+            app.UseStaticFiles(); // Для wwwroot
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(uploadsPath),
+                RequestPath = "/uploads"
+            });
 
 
             app.UseHttpsRedirection();

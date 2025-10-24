@@ -8,17 +8,33 @@ using System.Threading.Tasks;
 
 namespace Entities.Models
 {
-    // Файлы (цифровые продукты)
+    // Базовый класс для всех файлов
     [Table("Files")]
-    public class File : IEntity
+    public abstract class File : IEntity
     {
         [Key]
         public int Id { get; set; }
-        public int ProductId { get; set; }
-        public Product Product { get; set; }
+
+        [Required]
+        [MaxLength(500)]
         public string Path { get; set; }
-        public string FileType { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string FileName { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string MimeType { get; set; }
+
+        public long FileSize { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        // Discriminator для TPH (Table Per Hierarchy)
+        [Required]
+        [MaxLength(50)]
+        public string FileCategory { get; set; }
     }
 }

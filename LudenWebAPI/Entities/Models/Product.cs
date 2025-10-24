@@ -21,7 +21,7 @@ namespace Entities.Models
         // Навигационные свойства
         [JsonIgnore]
         public ICollection<BillItem> BillItems { get; set; }
-        public ICollection<File> Files { get; set; }
+        public ICollection<ProductFile> Files { get; set; }
         public ICollection<License> Licenses { get; set; }
     }
 }

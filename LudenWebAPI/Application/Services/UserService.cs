@@ -6,7 +6,7 @@ using Entities.Models;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher, IFileRepository fileRepository) : GenericService<User>(repository), IUserService
     {
         public async Task<User> GetUserByUsernameAsync(string username)
         {
@@ -54,6 +54,17 @@ namespace Application.Services
         {
             User? user = await repository.GetByIdAsync(id);
             ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
+
+            string? avatarUrl = null;
+            if (user.AvatarFileId.HasValue)
+            {
+                var avatarFile = await fileRepository.GetPhotoFileByIdAsync(user.AvatarFileId.Value);
+                if (avatarFile != null)
+                {
+                    avatarUrl = $"/uploads/{avatarFile.Path.Replace("\\", "/")}";
+                }
+            }
+
             UserProfileDTO dto = new()
             {
                 Username = user.Username,
@@ -61,6 +72,7 @@ namespace Application.Services
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
+                AvatarUrl = avatarUrl,
                 Bills = bills,
                 Products = bills.SelectMany(b => b.BillItems.Select(bi => bi.Product)).ToList()
             };

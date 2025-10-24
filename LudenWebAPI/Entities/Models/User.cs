@@ -20,6 +20,10 @@ namespace Entities.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
+        // Фото аватара
+        public int? AvatarFileId { get; set; }
+        public PhotoFile? AvatarFile { get; set; }
+
         // Навигационные свойства
         public ICollection<Bill> Bills { get; set; }
     }
