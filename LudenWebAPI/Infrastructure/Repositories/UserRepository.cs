@@ -33,7 +33,11 @@ namespace Infrastructure.Repositories
         }
         public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
         {
-            return context.Bills.Include(b => b.BillItems).ThenInclude(bi => bi.Product).Where(b => b.UserId == id).ToList();
+            return await context.Bills
+                .Include(b => b.BillItems)
+                .ThenInclude(bi => bi.Product)
+                .Where(b => b.UserId == id)
+                .ToListAsync();
         }
     }
 }

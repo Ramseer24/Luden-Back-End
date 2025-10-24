@@ -27,7 +27,12 @@ namespace LudenWebAPI
                       throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Сериализация enum как строк, а не чисел
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("ArtemPetrenko", policy =>
