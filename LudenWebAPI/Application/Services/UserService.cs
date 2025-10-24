@@ -61,7 +61,8 @@ namespace Application.Services
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
-                Bills = bills
+                Bills = bills,
+                Products = bills.SelectMany(b => b.BillItems.Select(bi => bi.Product)).ToList()
             };
             return dto;
         }
