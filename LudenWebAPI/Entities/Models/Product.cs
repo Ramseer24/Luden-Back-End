@@ -1,12 +1,6 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using File = Entities.Models.File;
+using System.Text.Json.Serialization;
 
 namespace Entities.Models
 {
@@ -25,6 +19,7 @@ namespace Entities.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Навигационные свойства
+        [JsonIgnore]
         public ICollection<BillItem> BillItems { get; set; }
         public ICollection<File> Files { get; set; }
         public ICollection<License> Licenses { get; set; }

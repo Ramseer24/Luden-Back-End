@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace Entities.Models
 {
@@ -15,6 +11,7 @@ namespace Entities.Models
         public int Id { get; set; }
 
         public int BillId { get; set; }
+        [JsonIgnore]
         public Bill Bill { get; set; }
 
         public int ProductId { get; set; }
