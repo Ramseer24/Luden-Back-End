@@ -29,6 +29,9 @@ namespace Application.Services
             return bill;
         }
 
-
+        public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(int userId)
+        {
+            return await repository.GetBillsByUserIdAsync(userId);
+        }
     }
 }

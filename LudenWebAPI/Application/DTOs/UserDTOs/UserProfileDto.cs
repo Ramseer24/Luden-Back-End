@@ -1,4 +1,6 @@
-﻿using Entities.Models;
+﻿using Application.DTOs.BillDTOs;
+using Application.DTOs.ProductDTOs;
+using Entities.Models;
 
 namespace Application.DTOs.UserDTOs
 {
@@ -11,7 +13,7 @@ namespace Application.DTOs.UserDTOs
         public DateTime? UpdatedAt { get; set; }
         public string? AvatarUrl { get; set; }
 
-        public ICollection<Bill> Bills { get; set; }
-        public ICollection<Product> Products { get; set; }
+        public ICollection<BillDto> Bills { get; set; }
+        public ICollection<ProductDto> Products { get; set; }
     }
 }

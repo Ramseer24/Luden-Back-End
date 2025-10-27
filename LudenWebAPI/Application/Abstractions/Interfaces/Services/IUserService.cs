@@ -11,6 +11,7 @@ namespace Application.Abstractions.Interfaces.Services
         Task<UserProfileDTO> GetUserProfileAsync(int id);
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<ICollection<Bill>> GetUserBillsByIdAsync(int id);
+        Task<ICollection<Product>> GetUserProductsByIdAsync(int userId);
         Task<bool> UsernameExistsAsync(string username);
         Task<bool> EmailExistsAsync(string email);
         Task UpdateUserAsync(UpdateUserDTO dto);

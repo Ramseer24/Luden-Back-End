@@ -65,7 +65,7 @@ namespace Infrastructure
             modelBuilder.Entity<File>()
                 .HasDiscriminator<string>("FileCategory")
                 .HasValue<PhotoFile>("Photo")
-                .HasValue<ProductFile>("Product");
+                .HasValue<ProductFile>("ProductFile");
 
             // Настройка связи User -> PhotoFile (аватар)
             modelBuilder.Entity<User>()

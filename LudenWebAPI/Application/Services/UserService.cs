@@ -1,6 +1,8 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
+using Application.DTOs.BillDTOs;
+using Application.DTOs.ProductDTOs;
 using Application.DTOs.UserDTOs;
 using Entities.Models;
 
@@ -50,10 +52,17 @@ namespace Application.Services
         {
             return await repository.GetUserBillsByIdAsync(id);
         }
+
+        public async Task<ICollection<Product>> GetUserProductsByIdAsync(int userId)
+        {
+            return await repository.GetUserProductsByIdAsync(userId);
+        }
+
         public async Task<UserProfileDTO> GetUserProfileAsync(int id)
         {
             User? user = await repository.GetByIdAsync(id);
             ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
+            ICollection<Product> products = await GetUserProductsByIdAsync(id);
 
             string? avatarUrl = null;
             if (user.AvatarFileId.HasValue)
@@ -73,8 +82,44 @@ namespace Application.Services
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 AvatarUrl = avatarUrl,
-                Bills = bills,
-                Products = bills.SelectMany(b => b.BillItems.Select(bi => bi.Product)).ToList()
+
+                Bills = bills.Select(b => new BillDto
+                {
+                    Id = b.Id,
+                    CreatedAt = b.CreatedAt,
+                    TotalAmount = b.TotalAmount,
+                    Status = b.Status.ToString(),
+                    BillItems = b.BillItems.Select(bi => new BillItemDto
+                    {
+                        Id = bi.Id,
+                        Quantity = bi.Quantity,
+                        Price = bi.PriceAtPurchase,
+                        Product = new ProductDto
+                        {
+                            Id = bi.Product.Id,
+                            Name = bi.Product.Name,
+                            Description = bi.Product.Description,
+                            Price = bi.Product.Price
+                        }
+                    }).ToList()
+                }).ToList(),
+
+                Products = products.Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Files = p.Files.Select(f => new ProductFileDto
+                    {
+                        Id = f.Id,
+                        Path = f.Path,
+                        FileName = f.FileName,
+                        FileType = f.FileType,
+                        DisplayOrder = f.DisplayOrder,
+                        MimeType = f.MimeType
+                    }).ToList()
+                }).ToList()
             };
             return dto;
         }

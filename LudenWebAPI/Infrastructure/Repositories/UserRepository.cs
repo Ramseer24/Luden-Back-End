@@ -39,5 +39,27 @@ namespace Infrastructure.Repositories
                 .Where(b => b.UserId == id)
                 .ToListAsync();
         }
+
+        public async Task<ICollection<Product>> GetUserProductsByIdAsync(int userId)
+        {
+            // Получаем уникальные ID продуктов из оплаченных счетов
+            var productIds = await context.Bills
+                .Where(b => b.UserId == userId &&
+                           (b.Status == Entities.Enums.BillStatus.Paid ||
+                            b.Status == Entities.Enums.BillStatus.Completed))
+                .SelectMany(b => b.BillItems)
+                .Select(bi => bi.ProductId)
+                .Distinct()
+                .ToListAsync();
+
+            // Загружаем продукты с Files и Region
+            var products = await context.Products
+                .Where(p => productIds.Contains(p.Id))
+                .Include(p => p.Files)
+                .Include(p => p.Region)
+                .ToListAsync();
+
+            return products;
+        }
     }
 }

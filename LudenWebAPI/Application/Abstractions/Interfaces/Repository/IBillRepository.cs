@@ -4,7 +4,6 @@ namespace Application.Abstractions.Interfaces.Repository
 {
     public interface IBillRepository : IGenericRepository<Bill>
     {
-        // Add any Bill-specific repository methods here if needed
-
+        Task<IEnumerable<Bill>> GetBillsByUserIdAsync(int userId);
     }
 }

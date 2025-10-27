@@ -4,6 +4,7 @@ using Entities.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LudenWebAPI.Controllers
 {
@@ -18,6 +19,32 @@ namespace LudenWebAPI.Controllers
         {
             var bills = await billService.GetAllAsync();
             return Ok(bills);
+        }
+
+        // GET: api/Bill/user
+        [HttpGet("user")]
+        public async Task<ActionResult<IEnumerable<Bill>>> GetUserBills()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                {
+                    return Unauthorized("User ID not found in token");
+                }
+
+                if (!int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return BadRequest("Invalid user ID format");
+                }
+
+                var bills = await billService.GetBillsByUserIdAsync(userId);
+                return Ok(bills);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving user bills: {ex.Message}");
+            }
         }
 
         // GET: api/Bill/5

@@ -164,6 +164,24 @@ namespace LudenWebAPI.Controllers
                 return StatusCode(500, $"An error occurred: {ex.Message}");
             }
         }
+
+        // GET: api/User/products - получение продуктов пользователя
+        [HttpGet("products")]
+        public async Task<ActionResult<ICollection<Product>>> GetUserProducts()
+        {
+            try
+            {
+                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+                var userId = _tokenService.GetUserIdFromToken(token);
+                var products = await _userService.GetUserProductsByIdAsync(userId);
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
     }
 }
 
