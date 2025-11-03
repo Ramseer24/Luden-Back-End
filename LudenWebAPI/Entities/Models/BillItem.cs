@@ -8,7 +8,7 @@ namespace Entities.Models
     public class BillItem : IEntity
     {
         [Key]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
 
         public int BillId { get; set; }
         [JsonIgnore]

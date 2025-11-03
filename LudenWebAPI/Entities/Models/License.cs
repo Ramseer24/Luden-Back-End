@@ -12,7 +12,7 @@ namespace Entities.Models
     public class License : IEntity
     {
         [Key]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
         public int ProductId { get; set; }
         public Product Product { get; set; }
         public int BillItemId { get; set; }

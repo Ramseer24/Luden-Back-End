@@ -14,7 +14,7 @@ namespace Entities.Models
     public class Region : IEntity
     {
         [Key]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -25,7 +25,7 @@ namespace Infrastructure
         public DbSet<PhotoFile> PhotoFiles { get; set; }
         public DbSet<ProductFile> ProductFiles { get; set; }
         public DbSet<License> Licenses { get; set; }
-
+        public DbSet<PaymentOrder> PaymentOrders { get; set; }
         public LudenDbContext(DbContextOptions<LudenDbContext> options) : base(options)
         {
         }

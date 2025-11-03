@@ -13,7 +13,7 @@ namespace Entities.Models
     public abstract class File : IEntity
     {
         [Key]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
 
         [Required]
         [MaxLength(500)]

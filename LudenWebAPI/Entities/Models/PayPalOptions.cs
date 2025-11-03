@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace Entities.Models
 {
-    public interface IEntity
+    public class PayPalOptions : IEntity
     {
+        public string ClientId { get; set; } = null!;
+        public string Secret { get; set; } = null!;
+        public bool UseSandbox { get; set; } = true;
         public ulong Id { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

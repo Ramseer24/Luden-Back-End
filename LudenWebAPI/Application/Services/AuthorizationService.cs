@@ -82,7 +82,8 @@ namespace Application.Services
                     Username = payload.Name,
                     Email = payload.Email,
                     GoogleId = payload.Subject,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
                 };
 
                 await userRepository.AddAsync(user);

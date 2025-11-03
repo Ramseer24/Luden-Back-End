@@ -15,7 +15,7 @@ namespace Entities.Models
     public class Bill : IEntity
     {
         [Key]
-        public int Id { get; set; }
+        public ulong Id { get; set; }
 
         public int UserId { get; set; }
         [JsonIgnore]
