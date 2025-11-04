@@ -30,13 +30,13 @@ namespace Application.Services
             if (loginData.Email != null)
             {
                 var userByEmail = await userRepository.GetByEmailAsync(loginData.Email);
-                UserId = userByEmail?.Id;
+                UserId = (int)userByEmail?.Id;
             }
             else if (loginData.googleJwtToken != null)
             {
                 string Id = (await googleTokenValidator.ValidateAsync(loginData.googleJwtToken)).Subject;
                 var userByGoogle = await userRepository.GetByGoogleIdAsync(Id);
-                UserId = userByGoogle?.Id;
+                UserId = (int)userByGoogle?.Id;
             }
             else
                 return null;

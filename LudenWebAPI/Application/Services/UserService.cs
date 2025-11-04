@@ -60,7 +60,7 @@ namespace Application.Services
 
         public async Task<UserProfileDTO> GetUserProfileAsync(int id)
         {
-            User? user = await repository.GetByIdAsync(id);
+            User? user = await repository.GetByIdAsync((ulong)id);
             ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
             ICollection<Product> products = await GetUserProductsByIdAsync(id);
 
@@ -85,18 +85,18 @@ namespace Application.Services
 
                 Bills = bills.Select(b => new BillDto
                 {
-                    Id = b.Id,
+                    Id = (int)b.Id,
                     CreatedAt = b.CreatedAt,
                     TotalAmount = b.TotalAmount,
                     Status = b.Status.ToString(),
                     BillItems = b.BillItems.Select(bi => new BillItemDto
                     {
-                        Id = bi.Id,
+                        Id = (int)bi.Id,
                         Quantity = bi.Quantity,
                         Price = bi.PriceAtPurchase,
                         Product = new ProductDto
                         {
-                            Id = bi.Product.Id,
+                            Id = (int)bi.Product.Id,
                             Name = bi.Product.Name,
                             Description = bi.Product.Description,
                             Price = bi.Product.Price
@@ -106,13 +106,13 @@ namespace Application.Services
 
                 Products = products.Select(p => new ProductDto
                 {
-                    Id = p.Id,
+                    Id = (int)p.Id,
                     Name = p.Name,
                     Description = p.Description,
                     Price = p.Price,
                     Files = p.Files.Select(f => new ProductFileDto
                     {
-                        Id = f.Id,
+                        Id = (int)f.Id,
                         Path = f.Path,
                         FileName = f.FileName,
                         FileType = f.FileType,

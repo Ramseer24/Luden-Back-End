@@ -1,5 +1,6 @@
 using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
+using Infrastructure.Extentions;
 using Infrastructure.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 using FileEntity = Entities.Models.File;
@@ -16,14 +17,14 @@ namespace Infrastructure.Repositories
         {
             return await context.Set<PhotoFile>()
                 .Include(pf => pf.User)
-                .FirstOrDefaultAsync(pf => pf.Id == id);
+                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
         }
 
         public async Task<ProductFile?> GetProductFileByIdAsync(int id)
         {
             return await context.Set<ProductFile>()
                 .Include(pf => pf.Product)
-                .FirstOrDefaultAsync(pf => pf.Id == id);
+                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
         }
 
         public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(int productId)

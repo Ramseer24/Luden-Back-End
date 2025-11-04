@@ -53,7 +53,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var bill = await billService.GetByIdAsync(id);
+                var bill = await billService.GetByIdAsync((ulong)id);
                 if (bill == null)
                 {
                     return NotFound();
@@ -98,7 +98,7 @@ namespace LudenWebAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBill(int id, [FromBody] Bill bill)
         {
-            if (id != bill.Id)
+            if ((ulong)id != bill.Id)
             {
                 return BadRequest("Bill ID mismatch");
             }
@@ -110,7 +110,7 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                var existingBill = await billService.GetByIdAsync(id);
+                var existingBill = await billService.GetByIdAsync((ulong)id);
                 if (existingBill == null)
                 {
                     return NotFound();
@@ -131,13 +131,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var bill = await billService.GetByIdAsync(id);
+                var bill = await billService.GetByIdAsync((ulong)id);
                 if (bill == null)
                 {
                     return NotFound();
                 }
 
-                await billService.DeleteAsync(id);
+                await billService.DeleteAsync((ulong)id);
                 return NoContent();
             }
             catch (Exception)

@@ -39,7 +39,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var user = await _userService.GetByIdAsync(id);
+                var user = await _userService.GetByIdAsync((ulong)id);
                 if (user == null)
                 {
                     return NotFound();
@@ -58,13 +58,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var user = await _userService.GetByIdAsync(id);
+                var user = await _userService.GetByIdAsync((ulong)id);
                 if (user == null)
                 {
                     return NotFound();
                 }
 
-                await _userService.DeleteAsync(id);
+                await _userService.DeleteAsync((ulong)id);
                 return NoContent();
             }
             catch (Exception)
@@ -82,7 +82,7 @@ namespace LudenWebAPI.Controllers
                 var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var userId = _tokenService.GetUserIdFromToken(token);
 
-                var user = await _userService.GetByIdAsync(userId);
+                var user = await _userService.GetByIdAsync((ulong)userId);
                 if (user == null)
                 {
                     return NotFound("User not found");

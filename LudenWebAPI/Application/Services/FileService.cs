@@ -32,7 +32,7 @@ namespace Application.Services
         public async Task<PhotoFile> UploadUserAvatarAsync(int userId, Stream fileStream, string fileName, string contentType, long fileSize)
         {
             // Проверяем существование пользователя
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdAsync((ulong)userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID {userId} not found");
@@ -44,7 +44,7 @@ namespace Application.Services
             {
                 // Удаляем физический файл
                 DeletePhysicalFile(existingAvatar.Path);
-                await _fileRepository.DeletePhotoFileAsync(existingAvatar.Id);
+                await _fileRepository.DeletePhotoFileAsync((int)existingAvatar.Id);
             }
 
             // Сохраняем новый файл
@@ -81,7 +81,7 @@ namespace Application.Services
             var savedFile = await _fileRepository.AddPhotoFileAsync(photoFile);
 
             // Обновляем пользователя
-            user.AvatarFileId = savedFile.Id;
+            user.AvatarFileId = (int)savedFile.Id;
             user.UpdatedAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 

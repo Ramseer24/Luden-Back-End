@@ -20,7 +20,7 @@ namespace Entities.Models
         public int UserId { get; set; }
         [JsonIgnore]
         public User User { get; set; }
-
+        public string Currency {  get; set; }
         public decimal TotalAmount { get; set; }
         public BillStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }

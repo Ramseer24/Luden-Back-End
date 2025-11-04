@@ -10,11 +10,11 @@ namespace Application.Abstractions.Interfaces.Services
 {
     public interface IGenericService<T> where T : IEntity
     {
-        Task<T> GetByIdAsync(int id);
+        Task<T> GetByIdAsync(ulong id);
         Task<IEnumerable<T>> GetAllAsync();
         Task CreateAsync(T entity);
         Task UpdateAsync(T entity);
-        Task DeleteAsync(int id);
+        Task DeleteAsync(ulong id);
         Task DeleteAsync(T entity);
     }
 

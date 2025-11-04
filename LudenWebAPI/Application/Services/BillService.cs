@@ -9,7 +9,7 @@ namespace Application.Services
     {
         public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status)
         {
-            var user = await userService.GetByIdAsync(userId);
+            var user = await userService.GetByIdAsync((ulong)userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID '{userId}' does not exist");

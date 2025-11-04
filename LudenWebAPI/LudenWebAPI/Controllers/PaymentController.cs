@@ -1,38 +1,46 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Application.Abstractions.Interfaces.Services;
+using Infrastructure.Extentions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace LudenWebAPI.Controllers
 {
-    using Application.Services.Email;
-    using Application.Services.Payment;
-    using Infrastructure;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Mvc;
-
-    namespace WebAPI.Controllers
+    [ApiController]
+    [Route("api/[controller]")]
+    public class PaymentController(IPayPalService payPalService) : ControllerBase
     {
-        [ApiController]
-        [Route("api/[controller]")]
-        public class PaymentController(PayPalService payPalService) : ControllerBase
+        [Authorize]
+        [HttpPost("paypal/create")]
+        public async Task<IActionResult> CreatePayPalOrder([FromBody] int billId)
         {
-
-            [Authorize]
-            [HttpPost("paypal/complete")]
-            public async Task<IActionResult> CompletePayPalPayment([FromBody] string payPalOrderId)
+            try
             {
-                try
-                {
-                    ulong userId = Convert.ToUInt64(User.FindFirst("Id")!.Value);
-                    var paymentOrder = await payPalService.CapturePaymentAsync(payPalOrderId, userId);
-                    return Ok(new { success = true, paymentId = paymentOrder.Id });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new { error = ex.Message });
-                }
+                int userId = int.Parse(User.FindFirst("Id")!.Value);
+                var orderId = await payPalService.CreatePayPalOrderAsync(userId.ToUlong(), billId.ToUlong());
+                return Ok(new { success = true, orderId });
             }
-
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-
+        [Authorize]
+        [HttpPost("paypal/complete")]
+        public async Task<IActionResult> CompletePayPalPayment([FromBody] string payPalOrderId)
+        {
+            try
+            {
+                int userId = int.Parse(User.FindFirst("Id")!.Value);
+                var paymentOrder = await payPalService.CapturePaymentAsync(payPalOrderId, userId.ToUlong());
+                return Ok(new { success = true, paymentId = paymentOrder.Id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
     }
 }

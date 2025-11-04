@@ -6,9 +6,9 @@ namespace Application.Abstractions.Interfaces.Repository
     {
         Task AddAsync(T entity);                    // ✅ Реализовано
         Task RemoveAsync(T entity);                 // ✅ Реализовано  
-        Task RemoveByIdAsync(int id);               // ✅ Реализовано
+        Task RemoveByIdAsync(ulong id);               // ✅ Реализовано
         Task UpdateAsync(T entity);                 // ✅ Реализовано
-        Task<T?> GetByIdAsync(int id);               // ✅ Реализовано
+        Task<T?> GetByIdAsync(ulong id);               // ✅ Реализовано
         Task<IEnumerable<T>> GetAllAsync();         // ✅ Реализовано
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
+using Infrastructure.Extentions;
 using Infrastructure.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Infrastructure.Repositories
 {
@@ -54,7 +56,7 @@ namespace Infrastructure.Repositories
 
             // Загружаем продукты с Files и Region
             var products = await context.Products
-                .Where(p => productIds.Contains(p.Id))
+                .Where(p => productIds.Contains(p.Id.ToInt()))
                 .Include(p => p.Files)
                 .Include(p => p.Region)
                 .ToListAsync();

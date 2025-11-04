@@ -11,7 +11,7 @@ public class GenericService<T>(IGenericRepository<T> repository) : IGenericServi
         await repository.AddAsync(entity);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(ulong id)
     {
         await repository.RemoveAsync(await GetByIdAsync(id));
     }
@@ -26,7 +26,7 @@ public class GenericService<T>(IGenericRepository<T> repository) : IGenericServi
         return await repository.GetAllAsync();
     }
 
-    public async Task<T?> GetByIdAsync(int id)
+    public async Task<T?> GetByIdAsync(ulong id)
     {
         return await repository.GetByIdAsync(id);
     }

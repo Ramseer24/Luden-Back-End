@@ -10,6 +10,7 @@ namespace Application.Abstractions.Interfaces.Services
     public interface IPayPalService : IGenericService<PaymentOrder>
     {
         Task<PaymentOrder> CapturePaymentAsync(string orderId, ulong userId);
+        Task<string> CreatePayPalOrderAsync(ulong orderId, ulong userId);
     }
 
 }
