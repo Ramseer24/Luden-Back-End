@@ -10,105 +10,116 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-namespace LudenWebAPI
+using Infrastructure.FirebaseDatabase.Tests;
+
+namespace LudenWebAPI;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static void Main(string[] args)
+        //запуск демо скрипта работы с файрбаззе
+        var demo = new DemoFirebaseTest();
+        await demo.RunDemoAsync();
+
+        #region PreviousCommentedCode
+
+        /*
+        var builder = WebApplication.CreateBuilder(args);
+
+        Config config = new();
+        builder.Configuration.Bind(config);
+        builder.Services.AddSingleton(config);
+
+        builder.Services.AddDbContext<LudenDbContext>(options =>
+options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
+                  throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
+
+        // Add services to the container.
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                // Сериализация enum как строк, а не чисел
+                options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+            });
+        builder.Services.AddCors(options =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            Config config = new();
-            builder.Configuration.Bind(config);
-            builder.Services.AddSingleton(config);
-
-            builder.Services.AddDbContext<LudenDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
-                      throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
-
-            // Add services to the container.
-            builder.Services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    // Сериализация enum как строк, а не чисел
-                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                });
-            builder.Services.AddCors(options =>
+            options.AddPolicy("ArtemPetrenko", policy =>
             {
-                options.AddPolicy("ArtemPetrenko", policy =>
-                {
-                    policy.AllowAnyOrigin()
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
-                    // .AllowCredentials();
-                });
+                policy.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+                // .AllowCredentials();
             });
-            // Configure JWT authentication
-            builder.Services.AddAuthentication(options =>
+        });
+        // Configure JWT authentication
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+            .AddJwtBearer(options =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-                .AddJwtBearer(options =>
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-                    };
-                });
-
-            //builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
-
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IBillRepository, BillRepository>();
-            builder.Services.AddScoped<IFileRepository, FileRepository>();
-            builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
-            builder.Services.AddScoped<ITokenService, BaseTokenService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
-            builder.Services.AddScoped<IBillService, BillService>();
-            builder.Services.AddScoped<IFileService, FileService>();
-
-            builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
-
-            WebApplication app = builder.Build();
-
-            // Настройка статических файлов для загрузок
-            app.UseStaticFiles(); // Для wwwroot
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-            if (!Directory.Exists(uploadsPath))
-            {
-                Directory.CreateDirectory(uploadsPath);
-            }
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(uploadsPath),
-                RequestPath = "/uploads"
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
             });
 
+        //builder.Services.AddEndpointsApiExplorer();
+        //builder.Services.AddSwaggerGen();
 
-            app.UseHttpsRedirection();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IBillRepository, BillRepository>();
+        builder.Services.AddScoped<IFileRepository, FileRepository>();
+        builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+        builder.Services.AddScoped<ITokenService, BaseTokenService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+        builder.Services.AddScoped<IBillService, BillService>();
+        builder.Services.AddScoped<IFileService, FileService>();
 
-            app.UseRouting();
+        builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
-            app.UseCors("ArtemPetrenko");
+        WebApplication app = builder.Build();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+        // Настройка статических файлов для загрузок
+        app.UseStaticFiles(); // Для wwwroot
+        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
-            app.MapControllers();
-
-            app.Run();
+        if (!Directory.Exists(uploadsPath))
+        {
+            Directory.CreateDirectory(uploadsPath);
         }
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(uploadsPath),
+            RequestPath = "/uploads"
+        });
+
+
+        app.UseHttpsRedirection();
+
+        app.UseRouting();
+
+        app.UseCors("ArtemPetrenko");
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapControllers();
+
+        app.Run();
+        */
+
+        #endregion
     }
 }

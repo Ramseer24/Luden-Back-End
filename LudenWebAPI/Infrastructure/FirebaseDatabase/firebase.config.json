@@ -1,0 +1,4 @@
+﻿{
+  "DatabaseUrl": "https://luden-db-default-rtdb.firebaseio.com/",
+  "SecretToken": "LudenDbKey1230123"
+}

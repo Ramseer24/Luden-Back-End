@@ -36,4 +36,11 @@
 	<ProjectReference Include="..\Application\Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="FirebaseDatabase\firebase.config.json" />
+    <Content Include="FirebaseDatabase\firebase.config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
