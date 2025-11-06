@@ -75,13 +75,13 @@ namespace Application.Services
                 FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Photo",
-                UserId = userId
+                UserId = (ulong)userId
             };
 
             var savedFile = await _fileRepository.AddPhotoFileAsync(photoFile);
 
             // Обновляем пользователя
-            user.AvatarFileId = (int)savedFile.Id;
+            user.AvatarFileId = (ulong)savedFile.Id;
             user.UpdatedAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
@@ -118,7 +118,7 @@ namespace Application.Services
                 FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Product",
-                ProductId = productId,
+                ProductId = (ulong)productId,
                 FileType = fileType
             };
 

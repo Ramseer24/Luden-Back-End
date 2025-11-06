@@ -9,7 +9,7 @@ namespace Entities.Models
         public int? Height { get; set; }
 
         // Навигационное свойство - пользователь, которому принадлежит аватар
-        public int? UserId { get; set; }
+        public ulong? UserId { get; set; }
         public User? User { get; set; }
     }
 }

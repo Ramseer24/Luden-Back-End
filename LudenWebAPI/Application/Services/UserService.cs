@@ -67,7 +67,7 @@ namespace Application.Services
             string? avatarUrl = null;
             if (user.AvatarFileId.HasValue)
             {
-                var avatarFile = await fileRepository.GetPhotoFileByIdAsync(user.AvatarFileId.Value);
+                var avatarFile = await fileRepository.GetPhotoFileByIdAsync((int)user.AvatarFileId.Value);
                 if (avatarFile != null)
                 {
                     avatarUrl = $"/uploads/{avatarFile.Path.Replace("\\", "/")}";

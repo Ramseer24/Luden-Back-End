@@ -30,7 +30,7 @@ namespace Infrastructure.Repositories
         public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(int productId)
         {
             return await context.Set<ProductFile>()
-                .Where(pf => pf.ProductId == productId)
+                .Where(pf => pf.ProductId == productId.ToUlong())
                 .OrderBy(pf => pf.DisplayOrder)
                 .ToListAsync();
         }
@@ -38,7 +38,7 @@ namespace Infrastructure.Repositories
         public async Task<PhotoFile?> GetUserAvatarAsync(int userId)
         {
             return await context.Set<PhotoFile>()
-                .FirstOrDefaultAsync(pf => pf.UserId == userId);
+                .FirstOrDefaultAsync(pf => pf.UserId == userId.ToUlong());
         }
 
         public async Task<PhotoFile> AddPhotoFileAsync(PhotoFile photoFile)

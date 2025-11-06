@@ -21,7 +21,7 @@ namespace Entities.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Фото аватара
-        public int? AvatarFileId { get; set; }
+        public ulong? AvatarFileId { get; set; }
         public PhotoFile? AvatarFile { get; set; }
 
         // Навигационные свойства

@@ -6,7 +6,7 @@ namespace Entities.Models
     public class ProductFile : File
     {
         [Required]
-        public int ProductId { get; set; }
+        public ulong ProductId { get; set; }
         public Product Product { get; set; }
 
         [MaxLength(100)]
