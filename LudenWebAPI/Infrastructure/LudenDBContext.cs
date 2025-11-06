@@ -81,6 +81,46 @@ namespace Infrastructure
                 .WithMany(p => p.Files)
                 .HasForeignKey(pf => pf.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Bill → User
+            modelBuilder.Entity<Bill>()
+                .HasOne(b => b.User)
+                .WithMany(u => u.Bills)
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // BillItem → Bill
+            modelBuilder.Entity<BillItem>()
+                .HasOne(bi => bi.Bill)
+                .WithMany(b => b.BillItems)
+                .HasForeignKey(bi => bi.BillId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // BillItem → Product
+            modelBuilder.Entity<BillItem>()
+                .HasOne(bi => bi.Product)
+                .WithMany(p => p.BillItems)
+                .HasForeignKey(bi => bi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BillItem>()
+                .HasOne(bi => bi.Product)
+                .WithMany(p => p.BillItems)
+                .HasForeignKey(bi => bi.ProductId);
+
+            // License → Product
+            modelBuilder.Entity<License>()
+                .HasOne(l => l.Product)
+                .WithMany(p => p.Licenses)
+                .HasForeignKey(l => l.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Product → Region
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Region)
+                .WithMany(r => r.Products)
+                .HasForeignKey(p => p.RegionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

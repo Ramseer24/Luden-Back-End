@@ -1,5 +1,5 @@
-﻿using Application.Abstractions.Interfaces.Services;
-using Infrastructure.Extentions;
+﻿// LudenWebAPI/Controllers/PaymentController.cs
+using Application.Abstractions.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -9,17 +9,17 @@ namespace LudenWebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PaymentController(IPayPalService payPalService) : ControllerBase
+    public class PaymentController(IStripeService stripeService) : ControllerBase
     {
         [Authorize]
-        [HttpPost("paypal/create")]
-        public async Task<IActionResult> CreatePayPalOrder([FromBody] int billId)
+        [HttpPost("stripe/create")]
+        public async Task<IActionResult> CreateStripePayment([FromBody] int billId)
         {
             try
             {
                 int userId = int.Parse(User.FindFirst("Id")!.Value);
-                var orderId = await payPalService.CreatePayPalOrderAsync(userId.ToUlong(), billId.ToUlong());
-                return Ok(new { success = true, orderId });
+                var paymentIntentId = await stripeService.CreatePaymentIntentAsync(userId, billId);
+                return Ok(new { success = true, paymentIntentId });
             }
             catch (Exception ex)
             {
@@ -28,13 +28,13 @@ namespace LudenWebAPI.Controllers
         }
 
         [Authorize]
-        [HttpPost("paypal/complete")]
-        public async Task<IActionResult> CompletePayPalPayment([FromBody] string payPalOrderId)
+        [HttpPost("stripe/complete")]
+        public async Task<IActionResult> CompleteStripePayment([FromBody] string paymentIntentId)
         {
             try
             {
                 int userId = int.Parse(User.FindFirst("Id")!.Value);
-                var paymentOrder = await payPalService.CapturePaymentAsync(payPalOrderId, userId.ToUlong());
+                var paymentOrder = await stripeService.CapturePaymentAsync(paymentIntentId, userId);
                 return Ok(new { success = true, paymentId = paymentOrder.Id });
             }
             catch (Exception ex)

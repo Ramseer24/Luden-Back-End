@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <Folder Include="DB_Storage\" />
-    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,13 +19,17 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
+	  <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.13.0" />
+	  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.13.0" />
+	  <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.13.0" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
 	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  <PrivateAssets>all</PrivateAssets>
 	</PackageReference>
 	<PackageReference Include="PayPalCheckoutSdk" Version="1.0.4" />
+	<PackageReference Include="Rescope.Commerce.PaymentProcessors.Stripe" Version="16.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>

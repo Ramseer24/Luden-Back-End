@@ -17,7 +17,7 @@ namespace Entities.Models
         [Key]
         public ulong Id { get; set; }
 
-        public int UserId { get; set; }
+        public ulong UserId { get; set; }
         [JsonIgnore]
         public User User { get; set; }
         public string Currency {  get; set; }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Entities.Models
 {
-    public class PayPalOptions : IEntity
+    public class StripeOptions : IEntity
     {
         public string ClientId { get; set; } = null!;
         public string Secret { get; set; } = null!;

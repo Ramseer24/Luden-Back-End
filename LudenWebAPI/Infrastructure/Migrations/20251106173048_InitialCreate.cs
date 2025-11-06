@@ -15,7 +15,7 @@ namespace Infrastructure.Migrations
                 name: "Regions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Code = table.Column<string>(type: "TEXT", nullable: false),
@@ -31,15 +31,16 @@ namespace Infrastructure.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     GoogleId = table.Column<string>(type: "TEXT", nullable: true),
                     Username = table.Column<string>(type: "TEXT", nullable: false),
                     Email = table.Column<string>(type: "TEXT", nullable: false),
-                    PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
+                    PasswordHash = table.Column<string>(type: "TEXT", nullable: true),
                     Role = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    AvatarFileId = table.Column<ulong>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -50,13 +51,13 @@ namespace Infrastructure.Migrations
                 name: "Products",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
                     Price = table.Column<decimal>(type: "TEXT", nullable: false),
                     Stock = table.Column<int>(type: "INTEGER", nullable: false),
-                    RegionId = table.Column<int>(type: "INTEGER", nullable: true),
+                    RegionId = table.Column<ulong>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
@@ -67,18 +68,20 @@ namespace Infrastructure.Migrations
                         name: "FK_Products_Regions_RegionId",
                         column: x => x.RegionId,
                         principalTable: "Regions",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Bills",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "TEXT", nullable: false),
-                    Status = table.Column<string>(type: "TEXT", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
@@ -94,16 +97,52 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PaymentOrders",
+                columns: table => new
+                {
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ProviderTransactionId = table.Column<string>(type: "TEXT", nullable: false),
+                    Provider = table.Column<string>(type: "TEXT", nullable: false),
+                    Success = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AmountInMinorUnits = table.Column<decimal>(type: "TEXT", nullable: false),
+                    Currency = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    TokensAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeliveredAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UserId = table.Column<ulong>(type: "INTEGER", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentOrders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentOrders_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Files",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Path = table.Column<string>(type: "TEXT", nullable: false),
-                    FileType = table.Column<string>(type: "TEXT", nullable: false),
+                    Path = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
+                    FileName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    MimeType = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    FileSize = table.Column<long>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FileCategory = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Width = table.Column<int>(type: "INTEGER", nullable: true),
+                    Height = table.Column<int>(type: "INTEGER", nullable: true),
+                    UserId = table.Column<ulong>(type: "INTEGER", nullable: true),
+                    ProductId = table.Column<ulong>(type: "INTEGER", nullable: true),
+                    FileType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -114,16 +153,22 @@ namespace Infrastructure.Migrations
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Files_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Bill_Items",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    BillId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
+                    BillId = table.Column<ulong>(type: "INTEGER", nullable: false),
+                    ProductId = table.Column<ulong>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Quantity = table.Column<int>(type: "INTEGER", nullable: false),
@@ -150,10 +195,10 @@ namespace Infrastructure.Migrations
                 name: "Licenses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                    Id = table.Column<ulong>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    ProductId = table.Column<int>(type: "INTEGER", nullable: false),
-                    BillItemId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductId = table.Column<ulong>(type: "INTEGER", nullable: false),
+                    BillItemId = table.Column<ulong>(type: "INTEGER", nullable: false),
                     LicenseKey = table.Column<string>(type: "TEXT", nullable: false),
                     Status = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -198,6 +243,12 @@ namespace Infrastructure.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Files_UserId",
+                table: "Files",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Licenses_BillItemId",
                 table: "Licenses",
                 column: "BillItemId");
@@ -212,6 +263,11 @@ namespace Infrastructure.Migrations
                 name: "IX_Licenses_ProductId",
                 table: "Licenses",
                 column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentOrders_UserId",
+                table: "PaymentOrders",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_RegionId",
@@ -245,6 +301,9 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Licenses");
+
+            migrationBuilder.DropTable(
+                name: "PaymentOrders");
 
             migrationBuilder.DropTable(
                 name: "Bill_Items");

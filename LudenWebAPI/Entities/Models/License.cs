@@ -13,9 +13,9 @@ namespace Entities.Models
     {
         [Key]
         public ulong Id { get; set; }
-        public int ProductId { get; set; }
+        public ulong ProductId { get; set; }
         public Product Product { get; set; }
-        public int BillItemId { get; set; }
+        public ulong BillItemId { get; set; }
         public BillItem BillItem { get; set; }
         public string LicenseKey { get; set; }
         public string Status { get; set; }

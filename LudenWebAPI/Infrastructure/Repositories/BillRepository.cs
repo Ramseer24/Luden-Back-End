@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
+using Infrastructure.Extentions;
 using Infrastructure.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ namespace Infrastructure.Repositories
             return await context.Bills
                 .Include(b => b.BillItems)
                 .ThenInclude(bi => bi.Product)
-                .Where(b => b.UserId == userId)
+                .Where(b => b.UserId == userId.ToUlong())
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
         }

@@ -8,7 +8,6 @@ namespace Entities.Models
         [Required]
         public ulong ProductId { get; set; }
         public Product Product { get; set; }
-
         [MaxLength(100)]
         public string? FileType { get; set; } // например: "installer", "screenshot", "manual"
 

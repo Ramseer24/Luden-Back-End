@@ -13,7 +13,7 @@ namespace Entities.Models
         public string Description { get; set; }
         public decimal Price { get; set; }
         public int Stock { get; set; }
-        public int? RegionId { get; set; }
+        public ulong RegionId { get; set; }
         public Region Region { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

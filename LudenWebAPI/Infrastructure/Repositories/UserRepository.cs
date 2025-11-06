@@ -38,7 +38,7 @@ namespace Infrastructure.Repositories
             return await context.Bills
                 .Include(b => b.BillItems)
                 .ThenInclude(bi => bi.Product)
-                .Where(b => b.UserId == id)
+                .Where(b => b.UserId == id.ToUlong())
                 .ToListAsync();
         }
 
@@ -46,7 +46,7 @@ namespace Infrastructure.Repositories
         {
             // Получаем уникальные ID продуктов из оплаченных счетов
             var productIds = await context.Bills
-                .Where(b => b.UserId == userId &&
+                .Where(b => b.UserId == userId.ToUlong() &&
                            (b.Status == Entities.Enums.BillStatus.Paid ||
                             b.Status == Entities.Enums.BillStatus.Completed))
                 .SelectMany(b => b.BillItems)
@@ -56,7 +56,7 @@ namespace Infrastructure.Repositories
 
             // Загружаем продукты с Files и Region
             var products = await context.Products
-                .Where(p => productIds.Contains(p.Id.ToInt()))
+                .Where(p => productIds.Contains(p.Id))
                 .Include(p => p.Files)
                 .Include(p => p.Region)
                 .ToListAsync();

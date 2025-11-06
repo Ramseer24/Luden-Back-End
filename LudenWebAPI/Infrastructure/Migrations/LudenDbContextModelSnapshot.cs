@@ -19,11 +19,15 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.Bill", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
@@ -35,7 +39,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("UserId")
+                    b.Property<ulong>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -47,11 +51,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.BillItem", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("BillId")
+                    b.Property<ulong>("BillId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -60,7 +64,7 @@ namespace Infrastructure.Migrations
                     b.Property<decimal>("PriceAtPurchase")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProductId")
+                    b.Property<ulong>("ProductId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Quantity")
@@ -80,7 +84,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.File", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -124,11 +128,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.License", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("BillItemId")
+                    b.Property<ulong>("BillItemId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -141,7 +145,7 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProductId")
+                    b.Property<ulong>("ProductId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
@@ -163,9 +167,55 @@ namespace Infrastructure.Migrations
                     b.ToTable("Licenses");
                 });
 
+            modelBuilder.Entity("Entities.Models.PaymentOrder", b =>
+                {
+                    b.Property<ulong>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("AmountInMinorUnits")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DeliveredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TokensAmount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<ulong>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentOrders");
+                });
+
             modelBuilder.Entity("Entities.Models.Product", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -183,7 +233,7 @@ namespace Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("RegionId")
+                    b.Property<ulong>("RegionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Stock")
@@ -201,7 +251,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.Region", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -229,11 +279,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Entities.Models.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("AvatarFileId")
+                    b.Property<ulong?>("AvatarFileId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -278,7 +328,7 @@ namespace Infrastructure.Migrations
                     b.Property<int?>("Height")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UserId")
+                    b.Property<ulong?>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("Width")
@@ -303,7 +353,7 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProductId")
+                    b.Property<ulong>("ProductId")
                         .HasColumnType("INTEGER");
 
                     b.HasIndex("ProductId");
@@ -362,11 +412,24 @@ namespace Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Entities.Models.PaymentOrder", b =>
+                {
+                    b.HasOne("Entities.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Entities.Models.Product", b =>
                 {
                     b.HasOne("Entities.Models.Region", "Region")
                         .WithMany("Products")
-                        .HasForeignKey("RegionId");
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Region");
                 });
