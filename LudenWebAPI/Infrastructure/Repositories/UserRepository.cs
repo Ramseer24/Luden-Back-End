@@ -27,14 +27,16 @@ namespace Infrastructure.Repositories
         // Проверка, существует ли пользователь по email
         public async Task<bool> ExistsByEmailAsync(string email)
         {
-            if (_useFirebase)
-            {
-                var allUsers = await GetAllAsync();
-                return allUsers.Any(u => u.Email == email);
-            }
+            // Пробуем получить всех пользователей из Firebase
+            var allUsers = await GetAllAsync();
 
-            return await _context!.Users.AnyAsync(u => u.Email == email);
+            if (allUsers == null || !allUsers.Any())
+                return false;
+
+            // Проверяем, есть ли совпадение по Email
+            return allUsers.Any(u => u != null && u.Email == email);
         }
+
 
         // Получить пользователя по email
         public async Task<User?> GetByEmailAsync(string email)
