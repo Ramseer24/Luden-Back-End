@@ -109,17 +109,44 @@ namespace Infrastructure.Repositories
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {
-            var result = await _firebaseRepo.GetAsync<Dictionary<string, T>>($"{_collectionName}", new ConsoleFirebaseListener());
+            var result = await _firebaseRepo.GetAsync<Dictionary<string, T>>(_collectionName, new ConsoleFirebaseListener());
+
             if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.RawJson))
                 return Enumerable.Empty<T>();
 
-            if (result.RawJson.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
+            var json = result.RawJson.Trim();
+
+            if (json.Equals("null", StringComparison.OrdinalIgnoreCase))
                 return Enumerable.Empty<T>();
 
-            var map = JsonSerializer.Deserialize<Dictionary<string, T>>(result.RawJson)
-                      ?? new Dictionary<string, T>();
+            try
+            {
+                // Попробуем как Dictionary<string, T>
+                var map = JsonSerializer.Deserialize<Dictionary<string, T>>(json);
+                if (map != null)
+                    return map.Values;
+            }
+            catch { }
 
-            return map.Values;
+            try
+            {
+                // Попробуем как массив
+                var list = JsonSerializer.Deserialize<List<T>>(json);
+                if (list != null)
+                    return list;
+            }
+            catch { }
+
+            try
+            {
+                // Попробуем как одиночный объект
+                var single = JsonSerializer.Deserialize<T>(json);
+                if (single != null)
+                    return new List<T> { single };
+            }
+            catch { }
+
+            return Enumerable.Empty<T>();
         }
     }
 
