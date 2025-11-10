@@ -10,107 +10,240 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-namespace LudenWebAPI
+using Entities.Models;
+using Infrastructure.FirebaseDatabase;
+
+namespace LudenWebAPI;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        // =============================
+        // Выбор режима: Firebase или SQLite
+        // =============================
+        bool useFirebase = true; // <-- переключатель режима
+
+        Config config = new();
+        builder.Configuration.Bind(config);
+        builder.Services.AddSingleton(config);
+
+        if (!useFirebase)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            Config config = new();
-            builder.Configuration.Bind(config);
-            builder.Services.AddSingleton(config);
-
+            // --- SQLite режим ---
             builder.Services.AddDbContext<LudenDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
-                      throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
+                options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
+                                  throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
 
-            // Add services to the container.
-            builder.Services.AddControllers()
-                .AddJsonOptions(options =>
-                {
-                    // Сериализация enum как строк, а не чисел
-                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-                });
-            builder.Services.AddCors(options =>
+            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
+                new UserRepository(sp.GetRequiredService<LudenDbContext>()));
+
+            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
+                new BillRepository(sp.GetRequiredService<LudenDbContext>()));
+
+            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
+                new FileRepository(sp.GetRequiredService<LudenDbContext>()));
+
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
+                new PaymentRepository(sp.GetRequiredService<LudenDbContext>()));
+        }
+        else
+        {
+            // --- Firebase режим ---
+            builder.Services.AddSingleton<FirebaseService>();      // Сервис для REST-запросов
+            builder.Services.AddScoped<FirebaseRepository>();      // Универсальный репозиторий
+
+            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
+                new UserRepository(sp.GetRequiredService<FirebaseRepository>()));
+
+            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
+                new BillRepository(sp.GetRequiredService<FirebaseRepository>()));
+
+            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
+                new FileRepository(sp.GetRequiredService<FirebaseRepository>()));
+
+            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
+                new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
+        }
+
+        // =============================
+        // Остальные сервисы
+        // =============================
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
             {
-                options.AddPolicy("ArtemPetrenko", policy =>
-                {
-                    policy.AllowAnyOrigin()
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
-                    // .AllowCredentials();
-                });
+                options.JsonSerializerOptions.Converters.Add(
+                    new System.Text.Json.Serialization.JsonStringEnumConverter());
             });
-            // Configure JWT authentication
-            builder.Services.AddAuthentication(options =>
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("ArtemPetrenko", policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+        // JWT
+        builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                .AddJwtBearer(options =>
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-                    };
-                });
-
-            //builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
-
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IBillRepository, BillRepository>();
-            builder.Services.AddScoped<IFileRepository, FileRepository>();
-            builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
-            builder.Services.AddScoped<ITokenService, BaseTokenService>();
-            builder.Services.AddScoped<IUserService, UserService>();
-            builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
-            builder.Services.AddScoped<IBillService, BillService>();
-            builder.Services.AddScoped<IFileService, FileService>();
-            builder.Services.AddScoped<IStripeService, StripeService>();
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-
-            builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
-
-            WebApplication app = builder.Build();
-
-            // Настройка статических файлов для загрузок
-            app.UseStaticFiles(); // Для wwwroot
-            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-            if (!Directory.Exists(uploadsPath))
-            {
-                Directory.CreateDirectory(uploadsPath);
-            }
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(uploadsPath),
-                RequestPath = "/uploads"
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
             });
 
+        // Сервисы бизнес-логики
+        builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+        builder.Services.AddScoped<ITokenService, BaseTokenService>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
+        builder.Services.AddScoped<IBillService, BillService>();
+        builder.Services.AddScoped<IFileService, FileService>();
+        builder.Services.AddScoped<IStripeService, StripeService>();
+        builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
-            app.UseHttpsRedirection();
+        // =============================
+        // Middleware
+        // =============================
+        WebApplication app = builder.Build();
 
-            app.UseRouting();
+        app.UseStaticFiles(); // wwwroot
+        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
-            app.UseCors("ArtemPetrenko");
+        if (!Directory.Exists(uploadsPath))
+            Directory.CreateDirectory(uploadsPath);
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(uploadsPath),
+            RequestPath = "/uploads"
+        });
 
-            app.MapControllers();
-
-            app.Run();
+        app.UseHttpsRedirection();
+        app.UseRouting();
+        app.UseCors("ArtemPetrenko");
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+            
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            //асинхронный тест и блок потока до завершения
+            RunFirebaseRepoTestsAsync(services).GetAwaiter().GetResult();
         }
+            
+        app.Run();
+    }
+    
+    //типо тесты для работы с файрбазе
+    private static async Task RunFirebaseRepoTestsAsync(IServiceProvider services)
+    {
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("=== Firebase Repository Tests Start ===");
+        Console.ResetColor();
+
+        var users = services.GetRequiredService<IUserRepository>();
+        var bills = services.GetRequiredService<IBillRepository>();
+        var files = services.GetRequiredService<IFileRepository>();
+        var payments = services.GetRequiredService<IPaymentRepository>();
+
+        //UserRepository
+        var testUser = new User
+        {
+            Id = 9999,
+            Username = "TestUser",
+            Email = "testuser@luden.com",
+            PasswordHash = "hashed123",
+            Role = "tester",
+            CreatedAt = DateTime.UtcNow
+        };
+        await users.AddAsync(testUser);
+        Console.WriteLine("UserRepository.AddAsync() работает.");
+
+        var fetchedUser = await users.GetByIdAsync(testUser.Id);
+        Console.WriteLine(fetchedUser != null ? "UserRepository.GetByIdAsync() работает." : "Не найден пользователь.");
+
+        fetchedUser!.Username = "UpdatedTester";
+        await users.UpdateAsync(fetchedUser);
+        Console.WriteLine("UserRepository.UpdateAsync() работает.");
+
+        //BillRepository
+        var testBill = new Bill
+        {
+            Id = 8888,
+            UserId = testUser.Id,
+            CreatedAt = DateTime.UtcNow,
+            Status = Entities.Enums.BillStatus.Paid
+        };
+        await bills.AddAsync(testBill);
+        Console.WriteLine("BillRepository.AddAsync() работает.");
+
+        var userBills = await bills.GetBillsByUserIdAsync((int)testUser.Id);
+        Console.WriteLine(userBills.Any() ? "BillRepository.GetBillsByUserIdAsync() работает." : "Счета пользователя не найдены.");
+
+        //FileRepository
+        var photo = new PhotoFile
+        {
+            Id = 7777,
+            FileName = "test_avatar.png",
+            UserId = testUser.Id,
+            Width = 512,
+            Height = 512,
+            CreatedAt = DateTime.UtcNow
+        };
+        await files.AddAsync(photo);
+        Console.WriteLine("FileRepository.AddAsync() работает.");
+
+        var fetchedPhoto = await files.GetByIdAsync(photo.Id);
+        Console.WriteLine(fetchedPhoto != null ? "FileRepository.GetByIdAsync() работает." : "Фото не найдено.");
+
+        //PaymentRepository
+        var testPayment = new PaymentOrder
+        {
+            Id = 6666,
+            ProviderTransactionId = "TEST-TRANSACTION-XYZ",
+            Provider = "Stripe",
+            Success = true,
+            AmountInMinorUnits = 1999, // $19.99 в центах
+            Currency = "USD",
+            CreatedAt = DateTime.UtcNow,
+            DeliveredAt = DateTime.UtcNow,
+            TokensAmount = 100,
+            UserId = testUser.Id,
+            UpdatedAt = null
+        };
+        await payments.AddAsync(testPayment);
+        Console.WriteLine("PaymentRepository.AddAsync() работает.");
+
+        var exists = await payments.ExistsByTransactionIdAsync("TEST-TRANSACTION-XYZ");
+        Console.WriteLine(exists ? "PaymentRepository.ExistsByTransactionIdAsync() работает." : "Payment не найден.");
+
+        //Очистка данных
+        await files.RemoveAsync(photo);
+        await bills.RemoveAsync(testBill);
+        await payments.RemoveAsync(testPayment);
+        await users.RemoveAsync(fetchedUser);
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("=== Все Firebase Repository Tests завершены успешно ===");
+        Console.ResetColor();
     }
 }
