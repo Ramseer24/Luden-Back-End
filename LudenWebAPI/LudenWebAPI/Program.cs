@@ -3,15 +3,16 @@ using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Application.Services;
 using Entities.Config;
+using Entities.Models;
 using Infrastructure;
+using Infrastructure.FirebaseDatabase;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Stripe;
 using System.Text;
-using Entities.Models;
-using Infrastructure.FirebaseDatabase;
 
 namespace LudenWebAPI;
 
@@ -27,6 +28,9 @@ public class Program
         bool useFirebase = true; // <-- переключатель режима
 
         Config config = new();
+        var stripeOptions = new StripeOptions();
+        builder.Configuration.GetSection("StripeOptions").Bind(stripeOptions);
+        StripeConfiguration.ApiKey = stripeOptions.Secret;
         builder.Configuration.Bind(config);
         builder.Services.AddSingleton(config);
 
@@ -115,7 +119,7 @@ public class Program
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
         builder.Services.AddScoped<IBillService, BillService>();
-        builder.Services.AddScoped<IFileService, FileService>();
+        builder.Services.AddScoped<IFileService, Application.Services.FileService>();
         builder.Services.AddScoped<IStripeService, StripeService>();
         builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
@@ -146,8 +150,8 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
-            //асинхронный тест и блок потока до завершения
-            RunFirebaseRepoTestsAsync(services).GetAwaiter().GetResult();
+            ////асинхронный тест и блок потока до завершения
+            //RunFirebaseRepoTestsAsync(services).GetAwaiter().GetResult();
         }
             
         app.Run();
