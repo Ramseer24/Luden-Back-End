@@ -1,5 +1,6 @@
 ﻿// LudenWebAPI/Controllers/PaymentController.cs
 using Application.Abstractions.Interfaces.Services;
+using LudenWebAPI.Models.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -20,6 +21,30 @@ namespace LudenWebAPI.Controllers
                 int userId = int.Parse(User.FindFirst("Id")!.Value);
                 var paymentIntentId = await stripeService.CreatePaymentIntentAsync(userId, billId);
                 return Ok(new { success = true, paymentIntentId });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+        [Authorize]
+        [HttpPost("stripe/update-status")]
+        public async Task<IActionResult> UpdateStripePayment([FromBody] UpdatePaymentRequest request)
+        {
+            try
+            {
+                var updated = await stripeService.UpdatePaymentStatusAsync(
+                    request.PaymentIntentId,
+                    request.PaymentMethod,
+                    request.Action
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    status = updated != null ? "succeeded" : "updated",
+                    paymentId = updated?.Id
+                });
             }
             catch (Exception ex)
             {

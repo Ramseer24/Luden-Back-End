@@ -28,7 +28,7 @@ namespace Application.Services
                 throw new Exception("User not found.");
 
             var bill = await billService.GetByIdAsync((ulong)billId);
-            if (bill == null || bill.User.Id != (ulong)userId)
+            if (bill == null || bill.UserId != (ulong)userId)
                 throw new Exception("Bill not found or does not belong to the user.");
 
             if (bill.Status != BillStatus.Pending)
@@ -47,6 +47,62 @@ namespace Application.Services
 
             var paymentIntent = await _paymentIntentService.CreateAsync(options);
             return paymentIntent.Id;
+        }
+        public async Task<PaymentOrder?> UpdatePaymentStatusAsync(string paymentIntentId, string paymentMethod, string action)
+        {
+            StripeConfiguration.ApiKey = config.StripeOptions.Secret;
+
+            var paymentIntent = await _paymentIntentService.GetAsync(paymentIntentId);
+            if (paymentIntent == null)
+                throw new Exception("Payment intent not found.");
+
+            // 1️⃣ Привязка метода оплаты (если указан)
+            if (!string.IsNullOrWhiteSpace(paymentMethod))
+            {
+                var updateOptions = new PaymentIntentUpdateOptions
+                {
+                    PaymentMethod = paymentMethod
+                };
+                paymentIntent = await _paymentIntentService.UpdateAsync(paymentIntentId, updateOptions);
+            }
+
+            // 2️⃣ Выполнение действия (confirm/cancel)
+            if (action?.ToLower() == "confirm")
+            {
+                var confirmOptions = new PaymentIntentConfirmOptions();
+                paymentIntent = await _paymentIntentService.ConfirmAsync(paymentIntentId, confirmOptions);
+            }
+            else if (action?.ToLower() == "cancel")
+            {
+                paymentIntent = await _paymentIntentService.CancelAsync(paymentIntentId);
+            }
+
+            // 3️⃣ Обновляем данные в локальной БД, если нужно
+            if (paymentIntent.Status == "succeeded")
+            {
+                var chargeService = new ChargeService();
+                var charges = chargeService.List(new ChargeListOptions { PaymentIntent = paymentIntent.Id });
+                var charge = charges.FirstOrDefault();
+
+                if (charge != null && !await repository.ExistsByTransactionIdAsync(charge.Id))
+                {
+                    var paymentOrder = new PaymentOrder
+                    {
+                        ProviderTransactionId = charge.Id,
+                        Provider = "Stripe",
+                        Success = true,
+                        AmountInMinorUnits = charge.Amount,
+                        Currency = charge.Currency.ToUpper(),
+                        CreatedAt = charge.Created.ToUniversalTime(),
+                        DeliveredAt = DateTime.UtcNow
+                    };
+
+                    await repository.AddAsync(paymentOrder);
+                    return paymentOrder;
+                }
+            }
+
+            return null;
         }
 
         public async Task<PaymentOrder> CapturePaymentAsync(string paymentIntentId, int userId)

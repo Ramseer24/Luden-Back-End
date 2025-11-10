@@ -13,6 +13,8 @@ namespace Application.Abstractions.Interfaces.Services
     {
         Task<string> CreatePaymentIntentAsync(int userId, int billId);
         Task<PaymentOrder> CapturePaymentAsync(string paymentIntentId, int userId);
+        Task<PaymentOrder?> UpdatePaymentStatusAsync(string paymentIntentId, string paymentMethod, string action);
+
     }
 }
 
