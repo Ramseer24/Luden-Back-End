@@ -29,9 +29,8 @@ public class Program
 
         Config config = new();
         var stripeOptions = new StripeOptions();
-        builder.Configuration.GetSection("StripeOptions").Bind(stripeOptions);
-        StripeConfiguration.ApiKey = stripeOptions.Secret;
         builder.Configuration.Bind(config);
+        StripeConfiguration.ApiKey = builder.Configuration.GetSection("StripeOptions")["SecretKey"];
         builder.Services.AddSingleton(config);
 
         if (!useFirebase)
