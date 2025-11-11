@@ -83,13 +83,13 @@ namespace Application.Services
                 UpdatedAt = user.UpdatedAt,
                 AvatarUrl = avatarUrl,
 
-                Bills = bills.Select(b => new BillDto
+                Bills = bills?.Select(b => new BillDto
                 {
                     Id = (int)b.Id,
                     CreatedAt = b.CreatedAt,
                     TotalAmount = b.TotalAmount,
                     Status = b.Status.ToString(),
-                    BillItems = b.BillItems.Select(bi => new BillItemDto
+                    BillItems = b.BillItems?.Select(bi => new BillItemDto
                     {
                         Id = (int)bi.Id,
                         Quantity = bi.Quantity,
@@ -101,16 +101,16 @@ namespace Application.Services
                             Description = bi.Product.Description,
                             Price = bi.Product.Price
                         }
-                    }).ToList()
-                }).ToList(),
+                    }).ToList() ?? new List<BillItemDto>()
+                }).ToList() ?? new List<BillDto>(),
 
-                Products = products.Select(p => new ProductDto
+                Products = products?.Select(p => new ProductDto
                 {
                     Id = (int)p.Id,
                     Name = p.Name,
                     Description = p.Description,
                     Price = p.Price,
-                    Files = p.Files.Select(f => new ProductFileDto
+                    Files = p.Files?.Select(f => new ProductFileDto
                     {
                         Id = (int)f.Id,
                         Path = f.Path,
@@ -118,8 +118,8 @@ namespace Application.Services
                         FileType = f.FileType,
                         DisplayOrder = f.DisplayOrder,
                         MimeType = f.MimeType
-                    }).ToList()
-                }).ToList()
+                    }).ToList() ?? new List<ProductFileDto>()
+                }).ToList() ?? new List<ProductDto>()
             };
             return dto;
         }
