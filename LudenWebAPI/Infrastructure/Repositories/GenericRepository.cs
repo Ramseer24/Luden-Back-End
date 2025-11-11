@@ -9,6 +9,8 @@ namespace Infrastructure.Repositories
     {
         private readonly FirebaseRepository _firebaseRepo;
         private readonly string _collectionName;
+        private static readonly Random _random = new Random();
+        private static readonly object _randomLock = new object();
 
         public GenericRepository(FirebaseRepository firebaseRepo)
         {
@@ -16,10 +18,59 @@ namespace Infrastructure.Repositories
             _collectionName = typeof(T).Name.ToLower() + "s"; // users, bills, files ...
         }
 
+        /// <summary>
+        /// Генерирует уникальный ID на основе Unix timestamp в миллисекундах.
+        /// Если ID уже существует, добавляет случайное число для избежания коллизий.
+        /// </summary>
+        private async Task<ulong> GenerateIdAsync()
+        {
+            // Unix timestamp в миллисекундах
+            // Помещается в ulong до года ~584,942,417,355 (584 миллиарда лет)
+            ulong baseId = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            // Проверяем, не существует ли уже запись с таким ID
+            var existing = await GetByIdAsync(baseId);
+            if (existing == null)
+            {
+                return baseId;
+            }
+
+            // Если ID уже существует (крайне редкий случай), добавляем случайное число
+            // Используем lock для потокобезопасности Random
+            int randomIncrement;
+            lock (_randomLock)
+            {
+                randomIncrement = _random.Next(1, 10000); // От 1 до 9999
+            }
+
+            ulong newId = baseId + (ulong)randomIncrement;
+
+            // Дополнительная проверка на коллизию (на практике не должна произойти)
+            existing = await GetByIdAsync(newId);
+            if (existing != null)
+            {
+                // Если и с инкрементом есть коллизия, используем timestamp + больший случайный номер
+                lock (_randomLock)
+                {
+                    randomIncrement = _random.Next(10000, 99999);
+                }
+                newId = baseId + (ulong)randomIncrement;
+            }
+
+            return newId;
+        }
+
         public async Task AddAsync(T entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
+
+            // Генерация ID для Firebase режима, если ID не установлен
+            if (entity.Id == 0)
+            {
+                entity.Id = await GenerateIdAsync();
+                Console.WriteLine($"[Firebase] Сгенерирован ID: {entity.Id} для {_collectionName}");
+            }
 
             Console.WriteLine($"[Firebase] Добавление {_collectionName}/{entity.Id}...");
             var result = await _firebaseRepo.SetAsync($"{_collectionName}/{entity.Id}", entity, new ConsoleFirebaseListener());
