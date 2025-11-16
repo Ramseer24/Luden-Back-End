@@ -20,15 +20,15 @@ namespace Application.Services
     {
         private readonly PaymentIntentService _paymentIntentService = new();
 
-        public async Task<string> CreatePaymentIntentAsync(int userId, int billId)
+        public async Task<string> CreatePaymentIntentAsync(ulong userId, ulong billId)
         {
             StripeConfiguration.ApiKey = config.StripeOptions.Secret;
-            var user = await userService.GetByIdAsync((ulong)userId);
+            var user = await userService.GetByIdAsync(userId);
             if (user == null)
                 throw new Exception("User not found.");
 
-            var bill = await billService.GetByIdAsync((ulong)billId);
-            if (bill == null || bill.UserId != (ulong)userId)
+            var bill = await billService.GetByIdAsync(billId);
+            if (bill == null || bill.UserId != userId)
                 throw new Exception("Bill not found or does not belong to the user.");
 
             if (bill.Status != BillStatus.Pending)
@@ -105,7 +105,7 @@ namespace Application.Services
             return null;
         }
 
-        public async Task<PaymentOrder> CapturePaymentAsync(string paymentIntentId, int userId)
+        public async Task<PaymentOrder> CapturePaymentAsync(string paymentIntentId, ulong userId)
         {
             StripeConfiguration.ApiKey = config.StripeOptions.Secret;
             var paymentIntent = await _paymentIntentService.GetAsync(
@@ -133,7 +133,7 @@ namespace Application.Services
             var createTime = charge.Created.ToUniversalTime();
 
 
-            var user = await userService.GetByIdAsync((ulong)userId);
+            var user = await userService.GetByIdAsync(userId);
             if (user == null)
                 throw new Exception("User not found.");
 

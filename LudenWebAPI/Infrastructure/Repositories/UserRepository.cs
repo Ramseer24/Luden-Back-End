@@ -81,25 +81,25 @@ namespace Infrastructure.Repositories
         }
 
         // Получить все счета пользователя по его ID
-        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(int id)
+        public async Task<ICollection<Bill>> GetUserBillsByIdAsync(ulong id)
         {
             if (_useFirebase)
             {
                 // Firebase-режим — получаем все счета и фильтруем
                 var billsRepo = new BillRepository(new FirebaseRepository(new FirebaseService()));
                 var allBills = await billsRepo.GetAllAsync();
-                return allBills.Where(b => b.UserId == id.ToUlong()).ToList();
+                return allBills.Where(b => b.UserId == id).ToList();
             }
 
             return await _context!.Bills
                 .Include(b => b.BillItems)
                 .ThenInclude(bi => bi.Product)
-                .Where(b => b.UserId == id.ToUlong())
+                .Where(b => b.UserId == id)
                 .ToListAsync();
         }
 
         // Получить все продукты, оплаченные пользователем
-        public async Task<ICollection<Product>> GetUserProductsByIdAsync(int userId)
+        public async Task<ICollection<Product>> GetUserProductsByIdAsync(ulong userId)
         {
             if (_useFirebase)
             {
@@ -107,7 +107,7 @@ namespace Infrastructure.Repositories
                 var billsRepo = new BillRepository(new FirebaseRepository(new FirebaseService()));
                 var allBills = await billsRepo.GetAllAsync();
                 var paidBills = allBills.Where(b =>
-                    b.UserId == userId.ToUlong() &&
+                    b.UserId == userId &&
                     (b.Status == Entities.Enums.BillStatus.Paid ||
                      b.Status == Entities.Enums.BillStatus.Completed)).ToList();
 
@@ -127,7 +127,7 @@ namespace Infrastructure.Repositories
 
             // Старый EF Core-режим
             var productIdsEf = await _context!.Bills
-                .Where(b => b.UserId == userId.ToUlong() &&
+                .Where(b => b.UserId == userId &&
                             (b.Status == Entities.Enums.BillStatus.Paid ||
                              b.Status == Entities.Enums.BillStatus.Completed))
                 .SelectMany(b => b.BillItems)

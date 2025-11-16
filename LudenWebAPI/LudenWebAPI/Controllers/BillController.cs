@@ -33,7 +33,7 @@ namespace LudenWebAPI.Controllers
                     return Unauthorized("User ID not found in token");
                 }
 
-                if (!int.TryParse(userIdClaim.Value, out int userId))
+                if (!ulong.TryParse(userIdClaim.Value, out ulong userId))
                 {
                     return BadRequest("Invalid user ID format");
                 }
@@ -49,11 +49,11 @@ namespace LudenWebAPI.Controllers
 
         // GET: api/Bill/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Bill>> GetBill(int id)
+        public async Task<ActionResult<Bill>> GetBill(ulong id)
         {
             try
             {
-                var bill = await billService.GetByIdAsync((ulong)id);
+                var bill = await billService.GetByIdAsync(id);
                 if (bill == null)
                 {
                     return NotFound();
@@ -96,9 +96,9 @@ namespace LudenWebAPI.Controllers
 
         // PUT: api/Bill/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBill(int id, [FromBody] Bill bill)
+        public async Task<IActionResult> PutBill(ulong id, [FromBody] Bill bill)
         {
-            if ((ulong)id != bill.Id)
+            if (id != bill.Id)
             {
                 return BadRequest("Bill ID mismatch");
             }
@@ -110,7 +110,7 @@ namespace LudenWebAPI.Controllers
 
             try
             {
-                var existingBill = await billService.GetByIdAsync((ulong)id);
+                var existingBill = await billService.GetByIdAsync(id);
                 if (existingBill == null)
                 {
                     return NotFound();
@@ -127,17 +127,17 @@ namespace LudenWebAPI.Controllers
 
         // DELETE: api/Bill/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBill(int id)
+        public async Task<IActionResult> DeleteBill(ulong id)
         {
             try
             {
-                var bill = await billService.GetByIdAsync((ulong)id);
+                var bill = await billService.GetByIdAsync(id);
                 if (bill == null)
                 {
                     return NotFound();
                 }
 
-                await billService.DeleteAsync((ulong)id);
+                await billService.DeleteAsync(id);
                 return NoContent();
             }
             catch (Exception)
@@ -149,7 +149,7 @@ namespace LudenWebAPI.Controllers
 
     public class BillCreateDto
     {
-        public int UserId { get; set; }
+        public ulong UserId { get; set; }
         public decimal TotalAmount { get; set; }
         public BillStatus Status { get; set; }
     }

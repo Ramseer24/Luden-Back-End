@@ -26,7 +26,7 @@ namespace Infrastructure.Repositories
             _useFirebase = true;
         }
 
-        public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(int userId)
+        public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(ulong userId)
         {
             if (_useFirebase)
             {
@@ -41,7 +41,7 @@ namespace Infrastructure.Repositories
                         {
                             foreach (var b in data.Values)
                             {
-                                if (b.UserId == (ulong)userId)
+                                if (b.UserId == userId)
                                     bills.Add(b);
                             }
                         }
@@ -56,7 +56,7 @@ namespace Infrastructure.Repositories
                 return await _context!.Bills
                     .Include(b => b.BillItems)
                     .ThenInclude(bi => bi.Product)
-                    .Where(b => b.UserId == userId.ToUlong())
+                    .Where(b => b.UserId == userId)
                     .OrderByDescending(b => b.CreatedAt)
                     .ToListAsync();
             }

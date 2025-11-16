@@ -2,7 +2,7 @@
 {
     public class BillDto
     {
-        public int Id { get; set; }
+        public ulong Id { get; set; }
         public DateTime CreatedAt { get; set; }
         public decimal TotalAmount { get; set; }
         public string Status { get; set; }

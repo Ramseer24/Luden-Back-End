@@ -7,9 +7,9 @@ namespace Application.Services
 {
     public class BillService(IBillRepository repository, IUserService userService) : GenericService<Bill>(repository), IBillService
     {
-        public async Task<Bill> CreateBillAsync(int userId, decimal totalAmount, BillStatus status)
+        public async Task<Bill> CreateBillAsync(ulong userId, decimal totalAmount, BillStatus status)
         {
-            var user = await userService.GetByIdAsync((ulong)userId);
+            var user = await userService.GetByIdAsync(userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID '{userId}' does not exist");
@@ -29,7 +29,7 @@ namespace Application.Services
             return bill;
         }
 
-        public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(int userId)
+        public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(ulong userId)
         {
             return await repository.GetBillsByUserIdAsync(userId);
         }

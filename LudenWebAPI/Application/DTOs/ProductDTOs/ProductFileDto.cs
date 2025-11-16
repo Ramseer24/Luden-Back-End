@@ -8,7 +8,7 @@ namespace Application.DTOs.ProductDTOs
 {
     public class ProductFileDto
     {
-        public int Id { get; set; }
+        public ulong Id { get; set; }
         public string Path { get; set; }
         public string FileName { get; set; }
         public string? FileType { get; set; }

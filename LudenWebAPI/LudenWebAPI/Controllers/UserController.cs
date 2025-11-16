@@ -35,11 +35,11 @@ namespace LudenWebAPI.Controllers
 
         // GET: api/User/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<ActionResult<User>> GetUser(ulong id)
         {
             try
             {
-                var user = await _userService.GetByIdAsync((ulong)id);
+                var user = await _userService.GetByIdAsync(id);
                 if (user == null)
                 {
                     return NotFound();
@@ -54,17 +54,17 @@ namespace LudenWebAPI.Controllers
 
         // DELETE: api/User/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(ulong id)
         {
             try
             {
-                var user = await _userService.GetByIdAsync((ulong)id);
+                var user = await _userService.GetByIdAsync(id);
                 if (user == null)
                 {
                     return NotFound();
                 }
 
-                await _userService.DeleteAsync((ulong)id);
+                await _userService.DeleteAsync(id);
                 return NoContent();
             }
             catch (Exception)
@@ -75,7 +75,8 @@ namespace LudenWebAPI.Controllers
 
         // PUT: api/User/update - обновление информации пользователя (включая аватар)
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateUser([FromForm] string? username, [FromForm] string? email, [FromForm] IFormFile? avatar)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateUser([FromForm] UpdateUserDTO dto)
         {
             try
             {
@@ -89,38 +90,38 @@ namespace LudenWebAPI.Controllers
                 }
 
                 // Обновляем данные пользователя
-                if (!string.IsNullOrEmpty(username))
+                if (!string.IsNullOrEmpty(dto.Username))
                 {
-                    user.Username = username;
+                    user.Username = dto.Username;
                 }
 
-                if (!string.IsNullOrEmpty(email))
+                if (!string.IsNullOrEmpty(dto.Email))
                 {
-                    user.Email = email;
+                    user.Email = dto.Email;
                 }
 
                 user.UpdatedAt = DateTime.UtcNow;
 
                 // Загружаем аватар если предоставлен
                 string? avatarUrl = null;
-                if (avatar != null && avatar.Length > 0)
+                if (dto.Avatar != null && dto.Avatar.Length > 0)
                 {
                     // Проверка типа файла
                     var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
-                    if (!allowedTypes.Contains(avatar.ContentType.ToLower()))
+                    if (!allowedTypes.Contains(dto.Avatar.ContentType.ToLower()))
                     {
                         return BadRequest("Only image files are allowed (JPEG, PNG, GIF)");
                     }
 
                     // Проверка размера (макс 5MB)
-                    if (avatar.Length > 5 * 1024 * 1024)
+                    if (dto.Avatar.Length > 5 * 1024 * 1024)
                     {
                         return BadRequest("File size must not exceed 5MB");
                     }
 
-                    using (var stream = avatar.OpenReadStream())
+                    using (var stream = dto.Avatar.OpenReadStream())
                     {
-                        var photoFile = await _fileService.UploadUserAvatarAsync(userId, stream, avatar.FileName, avatar.ContentType, avatar.Length);
+                        var photoFile = await _fileService.UploadUserAvatarAsync(userId, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
                         avatarUrl = _fileService.GetFileUrl(photoFile.Path);
                     }
                 }
@@ -142,7 +143,7 @@ namespace LudenWebAPI.Controllers
         }
 
         [HttpGet("profile/{id}")]
-        public async Task<UserProfileDTO> GetUserProfile(int id)
+        public async Task<UserProfileDTO> GetUserProfile(ulong id)
         {
             return await _userService.GetUserProfileAsync(id);
         }
