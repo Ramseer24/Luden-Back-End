@@ -8,12 +8,11 @@ namespace Application.Abstractions.Interfaces.Services
         Task<User> GetUserByUsernameAsync(string username);
         Task<User> GetUserByEmailAsync(string email);
         Task<User?> GetByGoogleIdAsync(string googleId);
-        Task<UserProfileDTO> GetUserProfileAsync(int id);
+        Task<UserProfileDTO> GetUserProfileAsync(ulong id);
         Task<IEnumerable<User>> GetAllUsersAsync();
-        Task<ICollection<Bill>> GetUserBillsByIdAsync(int id);
-        Task<ICollection<Product>> GetUserProductsByIdAsync(int userId);
+        Task<ICollection<Bill>> GetUserBillsByIdAsync(ulong id);
+        Task<ICollection<Product>> GetUserProductsByIdAsync(ulong userId);
         Task<bool> UsernameExistsAsync(string username);
         Task<bool> EmailExistsAsync(string email);
-        Task UpdateUserAsync(UpdateUserDTO dto);
     }
 }

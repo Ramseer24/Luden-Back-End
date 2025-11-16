@@ -33,6 +33,7 @@
 	<PackageReference Include="Rescope.Commerce.PaymentProcessors.Stripe" Version="16.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <!-- FirebaseAdmin и Google.Cloud.Storage больше не нужны - используем base64 blobs в Realtime Database -->
   </ItemGroup>
 
   <ItemGroup>

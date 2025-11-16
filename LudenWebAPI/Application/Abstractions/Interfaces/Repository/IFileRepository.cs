@@ -5,13 +5,13 @@ namespace Application.Abstractions.Interfaces.Repository
 {
     public interface IFileRepository : IGenericRepository<FileEntity>
     {
-        Task<PhotoFile?> GetPhotoFileByIdAsync(int id);
-        Task<ProductFile?> GetProductFileByIdAsync(int id);
-        Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(int productId);
-        Task<PhotoFile?> GetUserAvatarAsync(int userId);
+        Task<PhotoFile?> GetPhotoFileByIdAsync(ulong id);
+        Task<ProductFile?> GetProductFileByIdAsync(ulong id);
+        Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(ulong productId);
+        Task<PhotoFile?> GetUserAvatarAsync(ulong userId);
         Task<PhotoFile> AddPhotoFileAsync(PhotoFile photoFile);
         Task<ProductFile> AddProductFileAsync(ProductFile productFile);
-        Task DeletePhotoFileAsync(int id);
-        Task DeleteProductFileAsync(int id);
+        Task DeletePhotoFileAsync(ulong id);
+        Task DeleteProductFileAsync(ulong id);
     }
 }

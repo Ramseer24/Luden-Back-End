@@ -9,30 +9,24 @@ namespace Application.Services
     {
         private readonly IFileRepository _fileRepository;
         private readonly IUserRepository _userRepository;
-        private readonly string _uploadPath;
+        private readonly IFileStorageService _fileStorageService;
         private readonly string _baseUrl;
 
         public FileService(
             IFileRepository fileRepository,
-            IUserRepository userRepository) : base(fileRepository)
+            IUserRepository userRepository,
+            IFileStorageService fileStorageService) : base(fileRepository)
         {
             _fileRepository = fileRepository;
             _userRepository = userRepository;
-            // Путь для загрузки файлов (можно вынести в конфигурацию)
-            _uploadPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            _fileStorageService = fileStorageService;
             _baseUrl = "/uploads"; // Базовый URL для доступа к файлам
-
-            // Создаем директорию если её нет
-            if (!System.IO.Directory.Exists(_uploadPath))
-            {
-                System.IO.Directory.CreateDirectory(_uploadPath);
-            }
         }
 
-        public async Task<PhotoFile> UploadUserAvatarAsync(int userId, Stream fileStream, string fileName, string contentType, long fileSize)
+        public async Task<PhotoFile> UploadUserAvatarAsync(ulong userId, Stream fileStream, string fileName, string contentType, long fileSize)
         {
             // Проверяем существование пользователя
-            var user = await _userRepository.GetByIdAsync((ulong)userId);
+            var user = await _userRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 throw new InvalidOperationException($"User with ID {userId} not found");
@@ -42,141 +36,105 @@ namespace Application.Services
             var existingAvatar = await _fileRepository.GetUserAvatarAsync(userId);
             if (existingAvatar != null)
             {
-                // Удаляем физический файл
-                DeletePhysicalFile(existingAvatar.Path);
-                await _fileRepository.DeletePhotoFileAsync((int)existingAvatar.Id);
+                // Удаляем физический файл через FileStorageService
+                await _fileStorageService.DeleteFile(existingAvatar.Path);
+                await _fileRepository.DeletePhotoFileAsync(existingAvatar.Id);
             }
 
-            // Сохраняем новый файл
-            var fileExt = System.IO.Path.GetExtension(fileName);
-            var newFileName = $"avatar_{userId}_{Guid.NewGuid()}{fileExt}";
-            var relativePath = System.IO.Path.Combine("avatars", newFileName);
-            var fullPath = System.IO.Path.Combine(_uploadPath, "avatars", newFileName);
-
-            // Создаем директорию для аватаров
-            var avatarsDir = System.IO.Path.Combine(_uploadPath, "avatars");
-            if (!System.IO.Directory.Exists(avatarsDir))
-            {
-                System.IO.Directory.CreateDirectory(avatarsDir);
-            }
-
-            // Сохраняем файл
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await fileStream.CopyToAsync(stream);
-            }
+            // Сохраняем новый файл через FileStorageService
+            // В Firebase режиме: возвращает blob ID (строка), файл хранится как base64 в Firebase Realtime Database
+            // В SQLite режиме: возвращает относительный путь к файлу
+            var blobIdOrPath = await _fileStorageService.SaveImageFileAsync(fileStream, fileName, "image");
 
             // Создаем запись в БД
             var photoFile = new PhotoFile
             {
-                Path = relativePath,
+                Path = blobIdOrPath, // В Firebase режиме это blob ID, в SQLite - путь к файлу
                 FileName = fileName,
                 MimeType = contentType,
                 FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Photo",
-                UserId = (ulong)userId
+                UserId = userId
             };
 
             var savedFile = await _fileRepository.AddPhotoFileAsync(photoFile);
 
             // Обновляем пользователя
-            user.AvatarFileId = (ulong)savedFile.Id;
+            user.AvatarFileId = savedFile.Id;
             user.UpdatedAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
 
             return savedFile;
         }
 
-        public async Task<ProductFile> UploadProductFileAsync(int productId, Stream fileStream, string fileName, string contentType, long fileSize, string fileType)
+        public async Task<ProductFile> UploadProductFileAsync(ulong productId, Stream fileStream, string fileName, string contentType, long fileSize, string fileType)
         {
-            // Сохраняем файл
-            var fileExt = System.IO.Path.GetExtension(fileName);
-            var newFileName = $"product_{productId}_{Guid.NewGuid()}{fileExt}";
-            var relativePath = System.IO.Path.Combine("products", newFileName);
-            var fullPath = System.IO.Path.Combine(_uploadPath, "products", newFileName);
-
-            // Создаем директорию для файлов продуктов
-            var productsDir = System.IO.Path.Combine(_uploadPath, "products");
-            if (!System.IO.Directory.Exists(productsDir))
-            {
-                System.IO.Directory.CreateDirectory(productsDir);
-            }
-
-            // Сохраняем файл
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await fileStream.CopyToAsync(stream);
-            }
+            // Сохраняем файл через FileStorageService
+            // В Firebase режиме: возвращает blob ID (строка), файл хранится как base64 в Firebase Realtime Database
+            // В SQLite режиме: возвращает относительный путь к файлу
+            var blobIdOrPath = await _fileStorageService.SaveImageFileAsync(fileStream, fileName, "image");
 
             // Создаем запись в БД
             var productFile = new ProductFile
             {
-                Path = relativePath,
+                Path = blobIdOrPath, // В Firebase режиме это blob ID, в SQLite - путь к файлу
                 FileName = fileName,
                 MimeType = contentType,
                 FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Product",
-                ProductId = (ulong)productId,
+                ProductId = productId,
                 FileType = fileType
             };
 
             return await _fileRepository.AddProductFileAsync(productFile);
         }
 
-        public async Task<PhotoFile?> GetPhotoFileByIdAsync(int id)
+        public async Task<PhotoFile?> GetPhotoFileByIdAsync(ulong id)
         {
             return await _fileRepository.GetPhotoFileByIdAsync(id);
         }
 
-        public async Task<ProductFile?> GetProductFileByIdAsync(int id)
+        public async Task<ProductFile?> GetProductFileByIdAsync(ulong id)
         {
             return await _fileRepository.GetProductFileByIdAsync(id);
         }
 
-        public async Task<IEnumerable<ProductFile>> GetProductFilesAsync(int productId)
+        public async Task<IEnumerable<ProductFile>> GetProductFilesAsync(ulong productId)
         {
             return await _fileRepository.GetFilesByProductIdAsync(productId);
         }
 
-        public async Task<PhotoFile?> GetUserAvatarAsync(int userId)
+        public async Task<PhotoFile?> GetUserAvatarAsync(ulong userId)
         {
             return await _fileRepository.GetUserAvatarAsync(userId);
         }
 
-        public async Task DeletePhotoFileAsync(int id)
+        public async Task DeletePhotoFileAsync(ulong id)
         {
             var file = await _fileRepository.GetPhotoFileByIdAsync(id);
             if (file != null)
             {
-                DeletePhysicalFile(file.Path);
+                await _fileStorageService.DeleteFile(file.Path);
                 await _fileRepository.DeletePhotoFileAsync(id);
             }
         }
 
-        public async Task DeleteProductFileAsync(int id)
+        public async Task DeleteProductFileAsync(ulong id)
         {
             var file = await _fileRepository.GetProductFileByIdAsync(id);
             if (file != null)
             {
-                DeletePhysicalFile(file.Path);
+                await _fileStorageService.DeleteFile(file.Path);
                 await _fileRepository.DeleteProductFileAsync(id);
             }
         }
 
         public string GetFileUrl(string path)
         {
-            return $"{_baseUrl}/{path.Replace("\\", "/")}";
-        }
-
-        private void DeletePhysicalFile(string relativePath)
-        {
-            var fullPath = System.IO.Path.Combine(_uploadPath, relativePath);
-            if (System.IO.File.Exists(fullPath))
-            {
-                System.IO.File.Delete(fullPath);
-            }
+            // Используем Firebase Storage публичный URL для прямой отдачи на фронт
+            return _fileStorageService.GetPublicUrl(path);
         }
     }
 }

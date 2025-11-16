@@ -4,13 +4,18 @@ using Application.Abstractions.Interfaces.Services;
 using Application.Services;
 using Entities.Config;
 using Entities.Models;
+using FileSignatures;
+using FileSignatures.Formats;
 using Infrastructure;
+using Infrastructure.FileStorage;
 using Infrastructure.FirebaseDatabase;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Stripe;
 using System.Text;
 
@@ -122,6 +127,72 @@ public class Program
         builder.Services.AddScoped<IStripeService, StripeService>();
         builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
 
+        // File storage and validation services
+        // Используем GitHub репозиторий для хранения файлов
+        builder.Services.AddHttpClient();
+
+        // Загружаем конфигурацию GitHub Storage
+        var githubStorageConfig = new GitHubStorageConfig();
+        builder.Configuration.GetSection("GitHubStorage").Bind(githubStorageConfig);
+
+        // Регистрируем GitHubStorageService для обоих режимов
+        builder.Services.AddSingleton<IFileStorageService>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
+            return new GitHubStorageService(httpClient, githubStorageConfig);
+        });
+
+        builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
+            [new Png(), new Jpeg(), new Gif()]));
+
+        // =============================
+        // Swagger/OpenAPI
+        // =============================
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Luden Web API",
+                Version = "v1",
+                Description = "API для управления пользователями, продуктами, счетами и файлами",
+                Contact = new OpenApiContact
+                {
+                    Name = "Luden Team"
+                }
+            });
+
+            // Настройка для работы с файловыми загрузками (multipart/form-data)
+            c.EnableAnnotations();
+            c.CustomSchemaIds(type => type.FullName);
+
+            // Добавляем JWT авторизацию в Swagger
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
+
         // =============================
         // Middleware
         // =============================
@@ -139,23 +210,39 @@ public class Program
             RequestPath = "/uploads"
         });
 
+        // Swagger/OpenAPI только в Development режиме
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Luden Web API v1");
+                c.RoutePrefix = "swagger"; // Swagger будет доступен по /swagger
+                c.DisplayRequestDuration();
+            });
+
+            // Редирект с корневого пути на Swagger
+            app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+        }
+
+        // HTTPS редирект
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors("ArtemPetrenko");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-            
+
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             ////асинхронный тест и блок потока до завершения
             //RunFirebaseRepoTestsAsync(services).GetAwaiter().GetResult();
         }
-            
+
         app.Run();
     }
-    
+
     //типо тесты для работы с файрбазе
     private static async Task RunFirebaseRepoTestsAsync(IServiceProvider services)
     {
@@ -199,7 +286,7 @@ public class Program
         await bills.AddAsync(testBill);
         Console.WriteLine("BillRepository.AddAsync() работает.");
 
-        var userBills = await bills.GetBillsByUserIdAsync((int)testUser.Id);
+        var userBills = await bills.GetBillsByUserIdAsync(testUser.Id);
         Console.WriteLine(userBills.Any() ? "BillRepository.GetBillsByUserIdAsync() работает." : "Счета пользователя не найдены.");
 
         //FileRepository

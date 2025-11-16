@@ -25,60 +25,60 @@ namespace Infrastructure.Repositories
 
         // --- Методы работают в двух режимах ---
 
-        public async Task<PhotoFile?> GetPhotoFileByIdAsync(int id)
+        public async Task<PhotoFile?> GetPhotoFileByIdAsync(ulong id)
         {
             if (_useFirebase)
             {
-                var result = await GetByIdAsync((ulong)id);
+                var result = await GetByIdAsync(id);
                 return result as PhotoFile;
             }
 
             return await _context!.Set<PhotoFile>()
                 .Include(pf => pf.User)
-                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
+                .FirstOrDefaultAsync(pf => pf.Id == id);
         }
 
-        public async Task<ProductFile?> GetProductFileByIdAsync(int id)
+        public async Task<ProductFile?> GetProductFileByIdAsync(ulong id)
         {
             if (_useFirebase)
             {
-                var result = await GetByIdAsync((ulong)id);
+                var result = await GetByIdAsync(id);
                 return result as ProductFile;
             }
 
             return await _context!.Set<ProductFile>()
                 .Include(pf => pf.Product)
-                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
+                .FirstOrDefaultAsync(pf => pf.Id == id);
         }
 
-        public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(int productId)
+        public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(ulong productId)
         {
             if (_useFirebase)
             {
                 var all = await GetAllAsync();
                 return all
                     .OfType<ProductFile>()
-                    .Where(pf => pf.ProductId == productId.ToUlong())
+                    .Where(pf => pf.ProductId == productId)
                     .OrderBy(pf => pf.DisplayOrder)
                     .ToList();
             }
 
             return await _context!.Set<ProductFile>()
-                .Where(pf => pf.ProductId == productId.ToUlong())
+                .Where(pf => pf.ProductId == productId)
                 .OrderBy(pf => pf.DisplayOrder)
                 .ToListAsync();
         }
 
-        public async Task<PhotoFile?> GetUserAvatarAsync(int userId)
+        public async Task<PhotoFile?> GetUserAvatarAsync(ulong userId)
         {
             if (_useFirebase)
             {
                 var all = await GetAllAsync();
-                return all.OfType<PhotoFile>().FirstOrDefault(pf => pf.UserId == userId.ToUlong());
+                return all.OfType<PhotoFile>().FirstOrDefault(pf => pf.UserId == userId);
             }
 
             return await _context!.Set<PhotoFile>()
-                .FirstOrDefaultAsync(pf => pf.UserId == userId.ToUlong());
+                .FirstOrDefaultAsync(pf => pf.UserId == userId);
         }
 
         public async Task<PhotoFile> AddPhotoFileAsync(PhotoFile photoFile)
@@ -107,11 +107,11 @@ namespace Infrastructure.Repositories
             return productFile;
         }
 
-        public async Task DeletePhotoFileAsync(int id)
+        public async Task DeletePhotoFileAsync(ulong id)
         {
             if (_useFirebase)
             {
-                await RemoveByIdAsync((ulong)id);
+                await RemoveByIdAsync(id);
                 return;
             }
 
@@ -123,11 +123,11 @@ namespace Infrastructure.Repositories
             }
         }
 
-        public async Task DeleteProductFileAsync(int id)
+        public async Task DeleteProductFileAsync(ulong id)
         {
             if (_useFirebase)
             {
-                await RemoveByIdAsync((ulong)id);
+                await RemoveByIdAsync(id);
                 return;
             }
 

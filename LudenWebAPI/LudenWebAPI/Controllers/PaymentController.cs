@@ -14,11 +14,11 @@ namespace LudenWebAPI.Controllers
     {
         [Authorize]
         [HttpPost("stripe/create")]
-        public async Task<IActionResult> CreateStripePayment([FromBody] int billId)
+        public async Task<IActionResult> CreateStripePayment([FromBody] ulong billId)
         {
             try
             {
-                int userId = int.Parse(User.FindFirst("Id")!.Value);
+                ulong userId = ulong.Parse(User.FindFirst("Id")!.Value);
                 var paymentIntentId = await stripeService.CreatePaymentIntentAsync(userId, billId);
                 return Ok(new { success = true, paymentIntentId });
             }
@@ -58,7 +58,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                int userId = int.Parse(User.FindFirst("Id")!.Value);
+                ulong userId = ulong.Parse(User.FindFirst("Id")!.Value);
                 var paymentOrder = await stripeService.CapturePaymentAsync(paymentIntentId, userId);
                 return Ok(new { success = true, paymentId = paymentOrder.Id });
             }
