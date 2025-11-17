@@ -271,7 +271,7 @@ public class Program
         Console.WriteLine(userBills.Any() ? "BillRepository.GetBillsByUserIdAsync() работает." : "Счета пользователя не найдены.");
 
         //FileRepository
-        var photo = new PhotoFile
+        var photo = new ImageFile
         {
             Id = 7777,
             FileName = "test_avatar.png",
@@ -283,7 +283,7 @@ public class Program
         await files.AddAsync(photo);
         Console.WriteLine("FileRepository.AddAsync() работает.");
 
-        var fetchedPhoto = await files.GetByIdAsync(photo.Id);
+        var fetchedPhoto = await files.GetImageFileByIdAsync(photo.Id);
         Console.WriteLine(fetchedPhoto != null ? "FileRepository.GetByIdAsync() работает." : "Фото не найдено.");
 
         //PaymentRepository

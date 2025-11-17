@@ -11,6 +11,7 @@ namespace Entities.Models
         public string Email { get; set; }
         public string? PasswordHash { get; set; }
         public UserRole Role { get; set; } = UserRole.User;
+        public decimal BonusPoints { get; set; } = 0;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
@@ -19,7 +20,7 @@ namespace Entities.Models
 
         // Навигационные свойства (игнорируются при сериализации для избежания циклических ссылок)
         [JsonIgnore]
-        public PhotoFile? AvatarFile { get; set; }
+        public ImageFile? AvatarFile { get; set; }
 
         [JsonIgnore]
         public ICollection<Bill>? Bills { get; set; }

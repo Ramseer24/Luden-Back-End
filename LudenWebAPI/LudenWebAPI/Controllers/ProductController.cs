@@ -1,5 +1,7 @@
+using Application.Abstractions.Interfaces;
 using Application.Abstractions.Interfaces.Services;
 using Application.DTOs.ProductDTOs;
+using Entities.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,14 +9,9 @@ namespace LudenWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductController(IProductService productService, ITokenService tokenService, IUserService userService) : ControllerBase
     {
-        private readonly IProductService _productService;
 
-        public ProductController(IProductService productService)
-        {
-            _productService = productService;
-        }
 
         // GET: api/Product
         [HttpGet]
@@ -23,7 +20,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var products = await _productService.GetAllProductDtosAsync();
+                var products = await productService.GetAllProductDtosAsync();
                 return Ok(products);
             }
             catch (Exception ex)
@@ -39,7 +36,7 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var product = await _productService.GetProductDtoByIdAsync(id);
+                var product = await productService.GetProductDtoByIdAsync(id);
                 return Ok(product);
             }
             catch (KeyNotFoundException)
@@ -54,7 +51,7 @@ namespace LudenWebAPI.Controllers
 
         // POST: api/Product
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProductDto>> CreateProduct([FromForm] CreateProductDto dto)
         {
@@ -62,6 +59,11 @@ namespace LudenWebAPI.Controllers
             {
                 return BadRequest(ModelState);
             }
+
+
+            User user = await userService.GetByIdAsync(tokenService.GetUserIdFromToken(Request.Headers["Authorization"].ToString().Replace("Bearer ", "")));
+            if (user.Role != Entities.Enums.UserRole.Admin)
+                return Forbid();
 
             try
             {
@@ -92,7 +94,7 @@ namespace LudenWebAPI.Controllers
                     coverFileSize = dto.Cover.Length;
                 }
 
-                var product = await _productService.CreateProductAsync(dto, coverStream, coverFileName, coverContentType, coverFileSize);
+                var product = await productService.CreateProductAsync(dto, coverStream, coverFileName, coverContentType, coverFileSize);
                 return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
             }
             catch (Exception ex)
@@ -103,7 +105,7 @@ namespace LudenWebAPI.Controllers
 
         // PUT: api/Product/5
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult<ProductDto>> UpdateProduct(ulong id, [FromBody] UpdateProductDto dto)
         {
             if (!ModelState.IsValid)
@@ -111,9 +113,13 @@ namespace LudenWebAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            User user = await userService.GetByIdAsync(tokenService.GetUserIdFromToken(Request.Headers["Authorization"].ToString().Replace("Bearer ", "")));
+            if (user.Role != Entities.Enums.UserRole.Admin)
+                return Forbid();
+
             try
             {
-                var product = await _productService.UpdateProductAsync(id, dto);
+                var product = await productService.UpdateProductAsync(id, dto);
                 return Ok(product);
             }
             catch (KeyNotFoundException)
@@ -128,18 +134,22 @@ namespace LudenWebAPI.Controllers
 
         // DELETE: api/Product/5
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> DeleteProduct(ulong id)
         {
+            User user = await userService.GetByIdAsync(tokenService.GetUserIdFromToken(Request.Headers["Authorization"].ToString().Replace("Bearer ", "")));
+            if (user.Role != Entities.Enums.UserRole.Admin)
+                return Forbid();
+
             try
             {
-                var product = await _productService.GetByIdAsync(id);
+                var product = await productService.GetByIdAsync(id);
                 if (product == null)
                 {
                     return NotFound($"Product with ID {id} not found");
                 }
 
-                await _productService.DeleteAsync(id);
+                await productService.DeleteAsync(id);
                 return NoContent();
             }
             catch (Exception ex)
@@ -150,12 +160,17 @@ namespace LudenWebAPI.Controllers
 
         // PUT: api/Product/{id}/cover/{coverFileId}
         [HttpPut("{id}/cover/{coverFileId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult<ProductDto>> SetProductCover(ulong id, ulong coverFileId)
         {
+
+            User user = await userService.GetByIdAsync(tokenService.GetUserIdFromToken(Request.Headers["Authorization"].ToString().Replace("Bearer ", "")));
+            if (user.Role != Entities.Enums.UserRole.Admin)
+                return Forbid();
+
             try
             {
-                var product = await _productService.SetProductCoverAsync(id, coverFileId);
+                var product = await productService.SetProductCoverAsync(id, coverFileId);
                 return Ok(product);
             }
             catch (KeyNotFoundException ex)

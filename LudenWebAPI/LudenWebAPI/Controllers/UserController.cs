@@ -39,6 +39,7 @@ namespace LudenWebAPI.Controllers
                     Username = u.Username,
                     Email = u.Email,
                     Role = u.Role,
+                    BonusPoints = u.BonusPoints,
                     CreatedAt = u.CreatedAt,
                     UpdatedAt = u.UpdatedAt
                 });
@@ -67,6 +68,7 @@ namespace LudenWebAPI.Controllers
                     Username = user.Username,
                     Email = user.Email,
                     Role = user.Role,
+                    BonusPoints = user.BonusPoints,
                     CreatedAt = user.CreatedAt,
                     UpdatedAt = user.UpdatedAt
                 };
@@ -134,7 +136,7 @@ namespace LudenWebAPI.Controllers
 
                     using (var stream = dto.Avatar.OpenReadStream())
                     {
-                        var photoFile = await _fileService.UploadUserAvatarAsync(userId, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
+                        var photoFile = await _fileService.UploadImageAsync(userId, null, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
                         avatarUrl = _fileService.GetFileUrl(photoFile.Path);
                     }
                     
@@ -226,9 +228,11 @@ namespace LudenWebAPI.Controllers
                         Id = f.Id,
                         Path = f.Path,
                         FileName = f.FileName,
-                        FileType = f.FileType,
-                        DisplayOrder = f.DisplayOrder,
                         MimeType = f.MimeType,
+                        Width = f.Width,
+                        Height = f.Height,
+                        UserId = f.UserId,
+                        ProductId = f.ProductId,
                         Url = _fileService.GetFileUrl(f.Path)
                     }).ToList() ?? new List<ProductFileDto>(),
                     Licenses = p.Licenses ?? new List<License>()

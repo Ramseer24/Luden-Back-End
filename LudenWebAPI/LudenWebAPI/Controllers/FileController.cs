@@ -21,7 +21,7 @@ namespace LudenWebAPI.Controllers
         // POST: api/File/product/{productId} - Загрузка файла для продукта
         [HttpPost("product/{productId}")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult<ProductFile>> UploadProductFile(
+        public async Task<ActionResult<ImageFile>> UploadProductFile(
             ulong productId,
             [FromForm] UploadProductFileDTO dto)
         {
@@ -32,45 +32,40 @@ namespace LudenWebAPI.Controllers
                     return BadRequest("No file provided");
                 }
 
-                // Проверка типа файла (разрешаем изображения и архивы)
+                // Проверка типа файла (только изображения)
                 var allowedImageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
-                var allowedArchiveTypes = new[] { "application/zip", "application/x-zip-compressed", "application/x-rar-compressed", "application/octet-stream" };
-                var allAllowedTypes = allowedImageTypes.Concat(allowedArchiveTypes).ToArray();
 
-                if (!allAllowedTypes.Contains(dto.File.ContentType.ToLower()))
+                if (!allowedImageTypes.Contains(dto.File.ContentType.ToLower()))
                 {
-                    return BadRequest("Invalid file type. Allowed: images (JPEG, PNG, GIF, WebP) and archives (ZIP, RAR)");
+                    return BadRequest("Invalid file type. Allowed: JPEG, PNG, GIF, WebP");
                 }
 
-                // Проверка размера (макс 100MB для архивов, 10MB для изображений)
-                var maxSize = allowedImageTypes.Contains(dto.File.ContentType.ToLower()) ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
-                if (dto.File.Length > maxSize)
+                // Проверка размера (макс 10MB для изображений)
+                if (dto.File.Length > 10 * 1024 * 1024)
                 {
-                    return BadRequest($"File size must not exceed {maxSize / (1024 * 1024)}MB");
+                    return BadRequest("File size must not exceed 10MB");
                 }
 
                 using (var stream = dto.File.OpenReadStream())
                 {
-                    var productFile = await _fileService.UploadProductFileAsync(
+                    var imageFile = await _fileService.UploadImageAsync(
+                        null,
                         productId,
                         stream,
                         dto.File.FileName,
                         dto.File.ContentType,
-                        dto.File.Length,
-                        dto.FileType);
-
-                    // Устанавливаем порядок отображения
-                    productFile.DisplayOrder = dto.DisplayOrder;
+                        dto.File.Length);
 
                     return Ok(new
                     {
-                        id = productFile.Id,
-                        fileName = productFile.FileName,
-                        fileType = productFile.FileType,
-                        mimeType = productFile.MimeType,
-                        displayOrder = productFile.DisplayOrder,
-                        url = _fileService.GetFileUrl(productFile.Path),
-                        createdAt = productFile.CreatedAt
+                        id = imageFile.Id,
+                        fileName = imageFile.FileName,
+                        mimeType = imageFile.MimeType,
+                        width = imageFile.Width,
+                        height = imageFile.Height,
+                        productId = imageFile.ProductId,
+                        url = _fileService.GetFileUrl(imageFile.Path),
+                        createdAt = imageFile.CreatedAt
                     });
                 }
             }
@@ -83,7 +78,7 @@ namespace LudenWebAPI.Controllers
         // GET: api/File/product/{productId} - Получение всех файлов продукта
         [HttpGet("product/{productId}")]
         [AllowAnonymous] // Разрешаем анонимный доступ для просмотра товаров
-        public async Task<ActionResult<IEnumerable<ProductFile>>> GetProductFiles(ulong productId)
+        public async Task<ActionResult<IEnumerable<ImageFile>>> GetProductFiles(ulong productId)
         {
             try
             {
@@ -92,9 +87,9 @@ namespace LudenWebAPI.Controllers
                 {
                     id = f.Id,
                     fileName = f.FileName,
-                    fileType = f.FileType,
                     mimeType = f.MimeType,
-                    displayOrder = f.DisplayOrder,
+                    width = f.Width,
+                    height = f.Height,
                     url = _fileService.GetFileUrl(f.Path),
                     createdAt = f.CreatedAt
                 });
@@ -110,11 +105,11 @@ namespace LudenWebAPI.Controllers
         // GET: api/File/product/file/{fileId} - Получение информации о конкретном файле продукта
         [HttpGet("product/file/{fileId}")]
         [AllowAnonymous]
-        public async Task<ActionResult<ProductFile>> GetProductFile(ulong fileId)
+        public async Task<ActionResult<ImageFile>> GetProductFile(ulong fileId)
         {
             try
             {
-                var file = await _fileService.GetProductFileByIdAsync(fileId);
+                var file = await _fileService.GetImageFileByIdAsync(fileId);
                 if (file == null)
                 {
                     return NotFound("File not found");
@@ -124,9 +119,9 @@ namespace LudenWebAPI.Controllers
                 {
                     id = file.Id,
                     fileName = file.FileName,
-                    fileType = file.FileType,
                     mimeType = file.MimeType,
-                    displayOrder = file.DisplayOrder,
+                    width = file.Width,
+                    height = file.Height,
                     productId = file.ProductId,
                     url = _fileService.GetFileUrl(file.Path),
                     createdAt = file.CreatedAt
@@ -144,13 +139,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var file = await _fileService.GetProductFileByIdAsync(fileId);
+                var file = await _fileService.GetImageFileByIdAsync(fileId);
                 if (file == null)
                 {
                     return NotFound("File not found");
                 }
 
-                await _fileService.DeleteProductFileAsync(fileId);
+                await _fileService.DeleteImageFileAsync(fileId);
                 return Ok(new { message = "File deleted successfully" });
             }
             catch (Exception ex)
@@ -161,11 +156,11 @@ namespace LudenWebAPI.Controllers
 
         // GET: api/File/photo/{photoId} - Получение информации о фото
         [HttpGet("photo/{photoId}")]
-        public async Task<ActionResult<PhotoFile>> GetPhotoFile(ulong photoId)
+        public async Task<ActionResult<ImageFile>> GetPhotoFile(ulong photoId)
         {
             try
             {
-                var photo = await _fileService.GetPhotoFileByIdAsync(photoId);
+                var photo = await _fileService.GetImageFileByIdAsync(photoId);
                 if (photo == null)
                 {
                     return NotFound("Photo not found");
@@ -195,13 +190,13 @@ namespace LudenWebAPI.Controllers
         {
             try
             {
-                var photo = await _fileService.GetPhotoFileByIdAsync(photoId);
+                var photo = await _fileService.GetImageFileByIdAsync(photoId);
                 if (photo == null)
                 {
                     return NotFound("Photo not found");
                 }
 
-                await _fileService.DeletePhotoFileAsync(photoId);
+                await _fileService.DeleteImageFileAsync(photoId);
                 return Ok(new { message = "Photo deleted successfully" });
             }
             catch (Exception ex)
@@ -225,7 +220,6 @@ namespace LudenWebAPI.Controllers
                 }
 
                 var uploadedFiles = new List<object>();
-                int displayOrder = 0;
 
                 foreach (var file in dto.Files)
                 {
@@ -244,22 +238,21 @@ namespace LudenWebAPI.Controllers
 
                         using (var stream = file.OpenReadStream())
                         {
-                            var productFile = await _fileService.UploadProductFileAsync(
+                            var imageFile = await _fileService.UploadImageAsync(
+                                null,
                                 productId,
                                 stream,
                                 file.FileName,
                                 file.ContentType,
-                                file.Length,
-                                dto.FileType);
-
-                            productFile.DisplayOrder = displayOrder++;
+                                file.Length);
 
                             uploadedFiles.Add(new
                             {
-                                id = productFile.Id,
-                                fileName = productFile.FileName,
-                                fileType = productFile.FileType,
-                                url = _fileService.GetFileUrl(productFile.Path)
+                                id = imageFile.Id,
+                                fileName = imageFile.FileName,
+                                width = imageFile.Width,
+                                height = imageFile.Height,
+                                url = _fileService.GetFileUrl(imageFile.Path)
                             });
                         }
                     }

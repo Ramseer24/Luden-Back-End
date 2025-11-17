@@ -58,13 +58,13 @@ namespace Application.Services
             if (coverStream != null && !string.IsNullOrEmpty(coverFileName) && !string.IsNullOrEmpty(coverContentType))
             {
                 var fileSize = coverFileSize ?? 0;
-                var coverFile = await _fileService.UploadProductFileAsync(
+                var coverFile = await _fileService.UploadImageAsync(
+                    null,
                     product.Id,
                     coverStream,
                     coverFileName,
                     coverContentType,
-                    fileSize,
-                    "cover");
+                    fileSize);
 
                 product.CoverFileId = coverFile.Id;
                 product.UpdatedAt = DateTime.UtcNow;
@@ -122,7 +122,7 @@ namespace Application.Services
             }
 
             // Проверяем, что файл существует и принадлежит этому продукту
-            var coverFile = await _fileService.GetProductFileByIdAsync(coverFileId);
+            var coverFile = await _fileService.GetImageFileByIdAsync(coverFileId);
             if (coverFile == null)
             {
                 throw new KeyNotFoundException($"File with ID {coverFileId} not found");
@@ -147,27 +147,29 @@ namespace Application.Services
                 Id = f.Id,
                 Path = f.Path,
                 FileName = f.FileName,
-                FileType = f.FileType,
-                DisplayOrder = f.DisplayOrder,
                 MimeType = f.MimeType,
+                Width = f.Width,
+                Height = f.Height,
+                UserId = f.UserId,
+                ProductId = f.ProductId,
                 Url = _fileService.GetFileUrl(f.Path)
             }).ToList() ?? new List<ProductFileDto>();
 
             string? coverUrl = null;
             if (product.CoverFileId.HasValue)
             {
-                var coverFile = await _fileService.GetProductFileByIdAsync(product.CoverFileId.Value);
+                var coverFile = await _fileService.GetImageFileByIdAsync(product.CoverFileId.Value);
                 if (coverFile != null)
                 {
                     coverUrl = _fileService.GetFileUrl(coverFile.Path);
                 }
             }
-            
-            // Если обложка отсутствует, используем плейсхолдер
-            if (string.IsNullOrEmpty(coverUrl))
-            {
-                coverUrl = $"https://via.placeholder.com/600x400/cccccc/666666?text={Uri.EscapeDataString(product.Name)}";
-            }
+
+            //// Если обложка отсутствует, используем плейсхолдер
+            //if (string.IsNullOrEmpty(coverUrl))
+            //{
+            //    coverUrl = $"https://via.placeholder.com/600x400/cccccc/666666?text={Uri.EscapeDataString(product.Name)}";
+            //}
 
             return new ProductDto
             {

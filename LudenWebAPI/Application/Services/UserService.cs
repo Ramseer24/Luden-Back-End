@@ -58,7 +58,7 @@ namespace Application.Services
             string? avatarUrl = null;
             if (user.AvatarFileId.HasValue)
             {
-                var avatarFile = await fileRepository.GetPhotoFileByIdAsync(user.AvatarFileId.Value);
+                var avatarFile = await fileRepository.GetImageFileByIdAsync(user.AvatarFileId.Value);
                 if (avatarFile != null)
                 {
                     avatarUrl = fileService.GetFileUrl(avatarFile.Path);
@@ -70,6 +70,7 @@ namespace Application.Services
                 Username = user.Username,
                 Email = user.Email,
                 Role = user.Role,
+                BonusPoints = user.BonusPoints,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 AvatarUrl = avatarUrl,
@@ -106,9 +107,11 @@ namespace Application.Services
                         Id = f.Id,
                         Path = f.Path,
                         FileName = f.FileName,
-                        FileType = f.FileType,
-                        DisplayOrder = f.DisplayOrder,
                         MimeType = f.MimeType,
+                        Width = f.Width,
+                        Height = f.Height,
+                        UserId = f.UserId,
+                        ProductId = f.ProductId,
                         Url = fileService.GetFileUrl(f.Path)
                     }).ToList() ?? new List<ProductFileDto>()
                 }).ToList() ?? new List<ProductDto>()

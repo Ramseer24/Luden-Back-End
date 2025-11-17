@@ -22,10 +22,10 @@ namespace Entities.Models
         public ICollection<BillItem>? BillItems { get; set; }
         
         [JsonIgnore]
-        public ICollection<ProductFile>? Files { get; set; }
+        public ICollection<ImageFile>? Files { get; set; }
         
         [JsonIgnore]
-        public ProductFile? CoverFile { get; set; }
+        public ImageFile? CoverFile { get; set; }
         
         [JsonIgnore]
         public ICollection<License>? Licenses { get; set; }

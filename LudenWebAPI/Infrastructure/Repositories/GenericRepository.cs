@@ -125,30 +125,7 @@ namespace Infrastructure.Repositories
 
             try
             {
-                //Если тип File — пробуем определить подтип вручную
-                if (typeof(T) == typeof(Entities.Models.File))
-                {
-                    try
-                    {
-                        var photo = JsonSerializer.Deserialize<PhotoFile>(result.RawJson, JsonOptions.Default);
-                        if (photo != null)
-                            return photo as T;
-                    }
-                    catch { /* Игнорируем — не подходит */ }
-
-                    try
-                    {
-                        var product = JsonSerializer.Deserialize<ProductFile>(result.RawJson, JsonOptions.Default);
-                        if (product != null)
-                            return product as T;
-                    }
-                    catch { /* Игнорируем — не подходит */ }
-
-                    Console.WriteLine("[Firebase] Не удалось определить подтип File.");
-                    return null;
-                }
-
-                //Для всех остальных типов — стандартная десериализация
+                // Стандартная десериализация
                 return JsonSerializer.Deserialize<T>(result.RawJson, JsonOptions.Default);
             }
             catch (Exception ex)

@@ -35,7 +35,7 @@ namespace LudenWebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetImageById([FromRoute] ulong id, [FromQuery] bool redirect = false, [FromQuery] bool dataUri = false)
         {
-            var file = await _fileRepository.GetByIdAsync(id);
+            var file = await _fileRepository.GetImageFileByIdAsync(id);
 
             if (file == null)
             {
