@@ -11,13 +11,14 @@ using Infrastructure.FileStorage;
 using Infrastructure.FirebaseDatabase;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Stripe;
 using System.Text;
+using Product = Entities.Models.Product;
+using ProductService = Application.Services.ProductService;
 
 namespace LudenWebAPI;
 
@@ -56,6 +57,9 @@ public class Program
 
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
                 new PaymentRepository(sp.GetRequiredService<LudenDbContext>()));
+
+            // Note: GenericRepository<Product> работает только с Firebase
+            // Для SQLite режима нужно использовать DbContext напрямую или создать отдельный репозиторий
         }
         else
         {
@@ -74,6 +78,9 @@ public class Program
 
             builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
                 new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
+
+            builder.Services.AddScoped<IGenericRepository<Product>, GenericRepository<Product>>(sp =>
+                new GenericRepository<Product>(sp.GetRequiredService<FirebaseRepository>()));
         }
 
         // =============================
@@ -126,6 +133,7 @@ public class Program
         builder.Services.AddScoped<IFileService, Application.Services.FileService>();
         builder.Services.AddScoped<IStripeService, StripeService>();
         builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
+        builder.Services.AddScoped<IProductService, ProductService>();
 
         // File storage and validation services
         // Используем GitHub репозиторий для хранения файлов
