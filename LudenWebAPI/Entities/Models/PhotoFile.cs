@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Entities.Models
 {
@@ -7,9 +7,10 @@ namespace Entities.Models
     {
         public int? Width { get; set; }
         public int? Height { get; set; }
-
-        // Навигационное свойство - пользователь, которому принадлежит аватар
         public ulong? UserId { get; set; }
+
+        // Навигационное свойство (игнорируется при сериализации для избежания циклических ссылок)
+        [JsonIgnore]
         public User? User { get; set; }
     }
 }

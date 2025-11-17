@@ -6,12 +6,10 @@ using Entities.Config;
 using Entities.Models;
 using FileSignatures;
 using FileSignatures.Formats;
-using Infrastructure;
 using Infrastructure.FileStorage;
 using Infrastructure.FirebaseDatabase;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -28,60 +26,33 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // =============================
-        // Выбор режима: Firebase или SQLite
-        // =============================
-        bool useFirebase = true; // <-- переключатель режима
-
         Config config = new();
         var stripeOptions = new StripeOptions();
         builder.Configuration.Bind(config);
         StripeConfiguration.ApiKey = builder.Configuration.GetSection("StripeOptions")["SecretKey"];
         builder.Services.AddSingleton(config);
 
-        if (!useFirebase)
-        {
-            // --- SQLite режим ---
-            builder.Services.AddDbContext<LudenDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
-                                  throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
+        // Firebase режим
+        builder.Services.AddSingleton<FirebaseService>();      // Сервис для REST-запросов
+        builder.Services.AddScoped<FirebaseRepository>();      // Универсальный репозиторий
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
-                new UserRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
+            new UserRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
-                new BillRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
+            new BillRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
-                new FileRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
+            new FileRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
-                new PaymentRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
+            new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            // Note: GenericRepository<Product> работает только с Firebase
-            // Для SQLite режима нужно использовать DbContext напрямую или создать отдельный репозиторий
-        }
-        else
-        {
-            // --- Firebase режим ---
-            builder.Services.AddSingleton<FirebaseService>();      // Сервис для REST-запросов
-            builder.Services.AddScoped<FirebaseRepository>();      // Универсальный репозиторий
+        builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>(sp =>
+            new FavoriteRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
-                new UserRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
-                new BillRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
-                new FileRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
-                new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IGenericRepository<Product>, GenericRepository<Product>>(sp =>
-                new GenericRepository<Product>(sp.GetRequiredService<FirebaseRepository>()));
-        }
+        builder.Services.AddScoped<IGenericRepository<Product>, GenericRepository<Product>>(sp =>
+            new GenericRepository<Product>(sp.GetRequiredService<FirebaseRepository>()));
 
         // =============================
         // Остальные сервисы
@@ -120,7 +91,8 @@ public class Program
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role
                 };
             });
 
@@ -134,6 +106,7 @@ public class Program
         builder.Services.AddScoped<IStripeService, StripeService>();
         builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
         builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
         // File storage and validation services
         // Используем GitHub репозиторий для хранения файлов
@@ -270,7 +243,7 @@ public class Program
             Username = "TestUser",
             Email = "testuser@luden.com",
             PasswordHash = "hashed123",
-            Role = "tester",
+            Role = Entities.Enums.UserRole.User,
             CreatedAt = DateTime.UtcNow
         };
         await users.AddAsync(testUser);

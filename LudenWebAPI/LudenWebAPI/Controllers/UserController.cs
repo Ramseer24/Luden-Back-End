@@ -115,20 +115,7 @@ namespace LudenWebAPI.Controllers
                     return NotFound("User not found");
                 }
 
-                // Обновляем данные пользователя
-                if (!string.IsNullOrEmpty(dto.Username))
-                {
-                    user.Username = dto.Username;
-                }
-
-                if (!string.IsNullOrEmpty(dto.Email))
-                {
-                    user.Email = dto.Email;
-                }
-
-                user.UpdatedAt = DateTime.UtcNow;
-
-                // Загружаем аватар если предоставлен
+                // Загружаем аватар если предоставлен (делаем это первым, чтобы AvatarFileId был установлен)
                 string? avatarUrl = null;
                 if (dto.Avatar != null && dto.Avatar.Length > 0)
                 {
@@ -150,8 +137,29 @@ namespace LudenWebAPI.Controllers
                         var photoFile = await _fileService.UploadUserAvatarAsync(userId, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
                         avatarUrl = _fileService.GetFileUrl(photoFile.Path);
                     }
+                    
+                    // Получаем обновленного пользователя после загрузки аватара
+                    user = await _userService.GetByIdAsync((ulong)userId);
+                    if (user == null)
+                    {
+                        return NotFound("User not found");
+                    }
                 }
 
+                // Обновляем данные пользователя
+                if (!string.IsNullOrEmpty(dto.Username))
+                {
+                    user.Username = dto.Username;
+                }
+
+                if (!string.IsNullOrEmpty(dto.Email))
+                {
+                    user.Email = dto.Email;
+                }
+
+                user.UpdatedAt = DateTime.UtcNow;
+
+                // Сохраняем все изменения пользователя в БД
                 await _userService.UpdateAsync(user);
 
                 return Ok(new
@@ -220,7 +228,8 @@ namespace LudenWebAPI.Controllers
                         FileName = f.FileName,
                         FileType = f.FileType,
                         DisplayOrder = f.DisplayOrder,
-                        MimeType = f.MimeType
+                        MimeType = f.MimeType,
+                        Url = _fileService.GetFileUrl(f.Path)
                     }).ToList() ?? new List<ProductFileDto>(),
                     Licenses = p.Licenses ?? new List<License>()
                 }).ToList();

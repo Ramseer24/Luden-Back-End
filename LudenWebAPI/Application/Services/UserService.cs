@@ -8,7 +8,7 @@ using Entities.Models;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher, IFileRepository fileRepository) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher, IFileRepository fileRepository, IFileService fileService) : GenericService<User>(repository), IUserService
     {
         public async Task<User> GetUserByUsernameAsync(string username)
         {
@@ -61,7 +61,7 @@ namespace Application.Services
                 var avatarFile = await fileRepository.GetPhotoFileByIdAsync(user.AvatarFileId.Value);
                 if (avatarFile != null)
                 {
-                    avatarUrl = $"/uploads/{avatarFile.Path.Replace("\\", "/")}";
+                    avatarUrl = fileService.GetFileUrl(avatarFile.Path);
                 }
             }
 
@@ -108,7 +108,8 @@ namespace Application.Services
                         FileName = f.FileName,
                         FileType = f.FileType,
                         DisplayOrder = f.DisplayOrder,
-                        MimeType = f.MimeType
+                        MimeType = f.MimeType,
+                        Url = fileService.GetFileUrl(f.Path)
                     }).ToList() ?? new List<ProductFileDto>()
                 }).ToList() ?? new List<ProductDto>()
             };

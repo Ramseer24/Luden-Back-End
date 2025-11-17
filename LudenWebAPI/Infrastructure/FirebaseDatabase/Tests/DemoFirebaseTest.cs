@@ -15,7 +15,7 @@ public class DemoFirebaseTest : IFirebaseListener
         var service = new FirebaseService();
         _repo = new FirebaseRepository(service);
     }
-    
+
     public async Task RunDemoAsync()
     {
         Console.WriteLine("=== Firebase User Demo ===");
@@ -27,12 +27,12 @@ public class DemoFirebaseTest : IFirebaseListener
             Username = "Mamut_rahal",
             Email = "MRahal@fbi.com",
             PasswordHash = "hashed_pass_123",
-            Role = "user",
+            Role = Entities.Enums.UserRole.User,
             CreatedAt = DateTime.UtcNow
         };
 
         //ЗДЕСЬ ВЫЗОВ АСИНХРОННЫХ МЕТОДОВ
-        
+
         //добавление юзера (или перезапись) - работает ваще с любым энтити, не только юзером
         await _repo.SetAsync
         (
@@ -95,7 +95,7 @@ public class DemoFirebaseTest : IFirebaseListener
                 Role = receivedUser.Role,
                 CreatedAt = receivedUser.CreatedAt
             };
-            
+
             Console.WriteLine("Вот полученный объект User:");
             Console.WriteLine($"  ID: {user.Id}");
             Console.WriteLine($"  Username: {user.Username}");

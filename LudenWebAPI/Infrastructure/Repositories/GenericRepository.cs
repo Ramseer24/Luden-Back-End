@@ -130,7 +130,7 @@ namespace Infrastructure.Repositories
                 {
                     try
                     {
-                        var photo = JsonSerializer.Deserialize<PhotoFile>(result.RawJson);
+                        var photo = JsonSerializer.Deserialize<PhotoFile>(result.RawJson, JsonOptions.Default);
                         if (photo != null)
                             return photo as T;
                     }
@@ -138,7 +138,7 @@ namespace Infrastructure.Repositories
 
                     try
                     {
-                        var product = JsonSerializer.Deserialize<ProductFile>(result.RawJson);
+                        var product = JsonSerializer.Deserialize<ProductFile>(result.RawJson, JsonOptions.Default);
                         if (product != null)
                             return product as T;
                     }
@@ -149,7 +149,7 @@ namespace Infrastructure.Repositories
                 }
 
                 //Для всех остальных типов — стандартная десериализация
-                return JsonSerializer.Deserialize<T>(result.RawJson);
+                return JsonSerializer.Deserialize<T>(result.RawJson, JsonOptions.Default);
             }
             catch (Exception ex)
             {
@@ -173,7 +173,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как Dictionary<string, T>
-                var map = JsonSerializer.Deserialize<Dictionary<string, T>>(json);
+                var map = JsonSerializer.Deserialize<Dictionary<string, T>>(json, JsonOptions.Default);
                 if (map != null)
                     return map.Values;
             }
@@ -182,7 +182,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как массив
-                var list = JsonSerializer.Deserialize<List<T>>(json);
+                var list = JsonSerializer.Deserialize<List<T>>(json, JsonOptions.Default);
                 if (list != null)
                     return list;
             }
@@ -191,7 +191,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как одиночный объект
-                var single = JsonSerializer.Deserialize<T>(json);
+                var single = JsonSerializer.Deserialize<T>(json, JsonOptions.Default);
                 if (single != null)
                     return new List<T> { single };
             }

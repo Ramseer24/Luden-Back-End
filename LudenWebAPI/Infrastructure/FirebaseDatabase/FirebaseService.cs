@@ -29,7 +29,7 @@ public class FirebaseService
     {
         //var url = $"{_databaseUrl}/{path}.json";
         var url = $"{_databaseUrl}/{path}.json?auth={_secretToken}"; //формируем юрл для запроса на бд с токеном
-        var body = data != null ? JsonSerializer.Serialize(data) : "{}"; //формируем джсон на отправку
+        var body = data != null ? JsonSerializer.Serialize(data, JsonOptions.Default) : "{}"; //формируем джсон на отправку
         var request = new HttpRequestMessage(method, url) //формируем пакет с готовой джсон + с юрл
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")

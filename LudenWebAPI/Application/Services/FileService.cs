@@ -52,7 +52,6 @@ namespace Application.Services
                 Path = blobIdOrPath, // В Firebase режиме это blob ID, в SQLite - путь к файлу
                 FileName = fileName,
                 MimeType = contentType,
-                FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Photo",
                 UserId = userId
@@ -81,7 +80,6 @@ namespace Application.Services
                 Path = blobIdOrPath, // В Firebase режиме это blob ID, в SQLite - путь к файлу
                 FileName = fileName,
                 MimeType = contentType,
-                FileSize = fileSize,
                 CreatedAt = DateTime.UtcNow,
                 FileCategory = "Product",
                 ProductId = productId,

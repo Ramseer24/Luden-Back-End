@@ -1,5 +1,6 @@
 ﻿using Application.DTOs.BillDTOs;
 using Application.DTOs.ProductDTOs;
+using Entities.Enums;
 using Entities.Models;
 
 namespace Application.DTOs.UserDTOs
@@ -8,7 +9,7 @@ namespace Application.DTOs.UserDTOs
     {
         public string Username { get; set; }
         public string Email { get; set; }
-        public string Role { get; set; }
+        public UserRole Role { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? AvatarUrl { get; set; }

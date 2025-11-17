@@ -14,5 +14,6 @@ namespace Application.DTOs.ProductDTOs
         public string? FileType { get; set; }
         public int? DisplayOrder { get; set; }
         public string MimeType { get; set; }
+        public string? Url { get; set; }
     }
 }

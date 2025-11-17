@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace Application.DTOs.ProductDTOs
@@ -21,6 +22,8 @@ namespace Application.DTOs.ProductDTOs
 
         [Required]
         public ulong RegionId { get; set; }
+
+        public IFormFile? Cover { get; set; }
     }
 }
 

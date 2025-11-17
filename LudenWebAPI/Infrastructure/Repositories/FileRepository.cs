@@ -1,142 +1,64 @@
 using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
-using Infrastructure.Extentions;
 using Infrastructure.FirebaseDatabase;
-using Microsoft.EntityFrameworkCore;
 using FileEntity = Entities.Models.File;
 
 namespace Infrastructure.Repositories
 {
     public class FileRepository : GenericRepository<FileEntity>, IFileRepository
     {
-        private readonly LudenDbContext? _context; //для старой БД
-        private readonly bool _useFirebase;        //переключатель режима
-
-        public FileRepository(LudenDbContext context) : base(null!)
-        {
-            _context = context;
-            _useFirebase = false;
-        }
-
         public FileRepository(FirebaseRepository firebaseRepo) : base(firebaseRepo)
         {
-            _useFirebase = true;
         }
-
-        // --- Методы работают в двух режимах ---
 
         public async Task<PhotoFile?> GetPhotoFileByIdAsync(ulong id)
         {
-            if (_useFirebase)
-            {
-                var result = await GetByIdAsync(id);
-                return result as PhotoFile;
-            }
-
-            return await _context!.Set<PhotoFile>()
-                .Include(pf => pf.User)
-                .FirstOrDefaultAsync(pf => pf.Id == id);
+            var result = await GetByIdAsync(id);
+            return result as PhotoFile;
         }
 
         public async Task<ProductFile?> GetProductFileByIdAsync(ulong id)
         {
-            if (_useFirebase)
-            {
-                var result = await GetByIdAsync(id);
-                return result as ProductFile;
-            }
-
-            return await _context!.Set<ProductFile>()
-                .Include(pf => pf.Product)
-                .FirstOrDefaultAsync(pf => pf.Id == id);
+            var result = await GetByIdAsync(id);
+            return result as ProductFile;
         }
 
         public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(ulong productId)
         {
-            if (_useFirebase)
-            {
-                var all = await GetAllAsync();
-                return all
-                    .OfType<ProductFile>()
-                    .Where(pf => pf.ProductId == productId)
-                    .OrderBy(pf => pf.DisplayOrder)
-                    .ToList();
-            }
-
-            return await _context!.Set<ProductFile>()
+            var all = await GetAllAsync();
+            return all
+                .OfType<ProductFile>()
                 .Where(pf => pf.ProductId == productId)
                 .OrderBy(pf => pf.DisplayOrder)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<PhotoFile?> GetUserAvatarAsync(ulong userId)
         {
-            if (_useFirebase)
-            {
-                var all = await GetAllAsync();
-                return all.OfType<PhotoFile>().FirstOrDefault(pf => pf.UserId == userId);
-            }
-
-            return await _context!.Set<PhotoFile>()
-                .FirstOrDefaultAsync(pf => pf.UserId == userId);
+            var all = await GetAllAsync();
+            return all.OfType<PhotoFile>().FirstOrDefault(pf => pf.UserId == userId);
         }
 
         public async Task<PhotoFile> AddPhotoFileAsync(PhotoFile photoFile)
         {
-            if (_useFirebase)
-            {
-                await AddAsync(photoFile);
-                return photoFile;
-            }
-
-            await _context!.Set<PhotoFile>().AddAsync(photoFile);
-            await _context.SaveChangesAsync();
+            await AddAsync(photoFile);
             return photoFile;
         }
 
         public async Task<ProductFile> AddProductFileAsync(ProductFile productFile)
         {
-            if (_useFirebase)
-            {
-                await AddAsync(productFile);
-                return productFile;
-            }
-
-            await _context!.Set<ProductFile>().AddAsync(productFile);
-            await _context.SaveChangesAsync();
+            await AddAsync(productFile);
             return productFile;
         }
 
         public async Task DeletePhotoFileAsync(ulong id)
         {
-            if (_useFirebase)
-            {
-                await RemoveByIdAsync(id);
-                return;
-            }
-
-            var photoFile = await GetPhotoFileByIdAsync(id);
-            if (photoFile != null)
-            {
-                _context!.Set<PhotoFile>().Remove(photoFile);
-                await _context.SaveChangesAsync();
-            }
+            await RemoveByIdAsync(id);
         }
 
         public async Task DeleteProductFileAsync(ulong id)
         {
-            if (_useFirebase)
-            {
-                await RemoveByIdAsync(id);
-                return;
-            }
-
-            var productFile = await GetProductFileByIdAsync(id);
-            if (productFile != null)
-            {
-                _context!.Set<ProductFile>().Remove(productFile);
-                await _context.SaveChangesAsync();
-            }
+            await RemoveByIdAsync(id);
         }
     }
 }

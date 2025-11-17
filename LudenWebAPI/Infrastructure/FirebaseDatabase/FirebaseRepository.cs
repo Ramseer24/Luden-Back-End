@@ -45,7 +45,7 @@ public class FirebaseRepository
 
         try
         {
-            var data = JsonSerializer.Deserialize<T>(result.RawJson!);
+            var data = JsonSerializer.Deserialize<T>(result.RawJson!, JsonOptions.Default);
             if (data != null)
                 listener.OnDataSnapshot(data);
             else
