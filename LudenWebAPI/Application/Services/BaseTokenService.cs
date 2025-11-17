@@ -1,10 +1,8 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.Abstractions.Interfaces.Repository;
 using Application.DTOs.UserDTOs;
-using Entities;
 using Entities.Config;
-//using Infrastructure.Repositories;
-using Microsoft.Extensions.Options;
+using Entities.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -24,45 +22,59 @@ namespace Application.Services
 
         public async Task<string?> GenerateToken(UserLoginDTO loginData)
         {
-            List<Claim> claims = new();
-            int? UserId = null;
+            User? user = null;
 
-            if (loginData.Email != null)
+            if (!string.IsNullOrEmpty(loginData.Email))
             {
-                var userByEmail = await userRepository.GetByEmailAsync(loginData.Email);
-                UserId = (int)userByEmail?.Id;
+                user = await userRepository.GetByEmailAsync(loginData.Email);
             }
-            else if (loginData.googleJwtToken != null)
+            else if (!string.IsNullOrEmpty(loginData.googleJwtToken))
             {
-                string Id = (await googleTokenValidator.ValidateAsync(loginData.googleJwtToken)).Subject;
-                var userByGoogle = await userRepository.GetByGoogleIdAsync(Id);
-                UserId = (int)userByGoogle?.Id;
+                var googleToken = await googleTokenValidator.ValidateAsync(loginData.googleJwtToken);
+                user = await userRepository.GetByGoogleIdAsync(googleToken.Subject);
             }
-            else
-                return null;
 
-
-            if (UserId == null)
+            if (user == null)
             {
                 throw new UnauthorizedAccessException("User not found");
             }
 
-            claims.Add(new Claim("Id", UserId.Value.ToString()));
+            return GenerateJwtToken(user);
+        }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        public string GenerateJwtToken(User user)
+        {
+            Claim[] claims =
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim("Id", user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
+            ];
 
-            var token = new JwtSecurityToken(
+            if (!string.IsNullOrEmpty(user.Username))
+            {
+                claims = [.. claims, new Claim(ClaimTypes.Name, user.Username)];
+            }
+
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                claims = [.. claims, new Claim(ClaimTypes.Email, user.Email)];
+            }
+
+            SymmetricSecurityKey key = new(Encoding.UTF8.GetBytes(_secretKey));
+            SigningCredentials creds = new(key, SecurityAlgorithms.HmacSha256);
+
+            JwtSecurityToken token = new(
                 issuer: _issuer,
                 audience: _audience,
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(_tokenExpiresHours),
-                signingCredentials: creds
-            );
+                signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        public int GetUserIdFromToken(string token)
+        public ulong GetUserIdFromToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_secretKey);
@@ -81,7 +93,7 @@ namespace Application.Services
 
             var userIdClaim = principal.Claims.FirstOrDefault(c => c.Type == "Id");
 
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            if (userIdClaim == null || !ulong.TryParse(userIdClaim.Value, out ulong userId))
             {
                 throw new SecurityTokenException("Id claim missing or invalid");
             }

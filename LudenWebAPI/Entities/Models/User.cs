@@ -1,30 +1,28 @@
-﻿using Entities.Models;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Entities.Enums;
+using System.Text.Json.Serialization;
 
 namespace Entities.Models
 {
     public class User : IEntity
     {
-        [Key]
         public ulong Id { get; set; }
         public string? GoogleId { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
         public string? PasswordHash { get; set; }
-        public string Role { get; set; } = "user";
+        public UserRole Role { get; set; } = UserRole.User;
+        public decimal BonusPoints { get; set; } = 0;
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
         // Фото аватара
         public ulong? AvatarFileId { get; set; }
-        public PhotoFile? AvatarFile { get; set; }
 
-        // Навигационные свойства
-        public ICollection<Bill> Bills { get; set; }
+        // Навигационные свойства (игнорируются при сериализации для избежания циклических ссылок)
+        [JsonIgnore]
+        public ImageFile? AvatarFile { get; set; }
+
+        [JsonIgnore]
+        public ICollection<Bill>? Bills { get; set; }
     }
 }

@@ -60,7 +60,7 @@ namespace Application.Services
                 Email = email,
                 PasswordHash = passwordHash,
                 CreatedAt = DateTime.UtcNow,
-                Role = "user"
+                Role = Entities.Enums.UserRole.User
             };
 
             await userRepository.AddAsync(user);

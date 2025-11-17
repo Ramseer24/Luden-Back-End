@@ -1,182 +1,145 @@
 using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Entities.Models;
-using FileEntity = Entities.Models.File;
+using SixLabors.ImageSharp;
 
 namespace Application.Services
 {
-    public class FileService : GenericService<FileEntity>, IFileService
+    public class FileService : GenericService<ImageFile>, IFileService
     {
         private readonly IFileRepository _fileRepository;
         private readonly IUserRepository _userRepository;
-        private readonly string _uploadPath;
+        private readonly IFileStorageService _fileStorageService;
         private readonly string _baseUrl;
 
         public FileService(
             IFileRepository fileRepository,
-            IUserRepository userRepository) : base(fileRepository)
+            IUserRepository userRepository,
+            IFileStorageService fileStorageService) : base(fileRepository)
         {
             _fileRepository = fileRepository;
             _userRepository = userRepository;
-            // Путь для загрузки файлов (можно вынести в конфигурацию)
-            _uploadPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            _fileStorageService = fileStorageService;
             _baseUrl = "/uploads"; // Базовый URL для доступа к файлам
-
-            // Создаем директорию если её нет
-            if (!System.IO.Directory.Exists(_uploadPath))
-            {
-                System.IO.Directory.CreateDirectory(_uploadPath);
-            }
         }
 
-        public async Task<PhotoFile> UploadUserAvatarAsync(int userId, Stream fileStream, string fileName, string contentType, long fileSize)
+        public async Task<ImageFile> UploadImageAsync(ulong? userId, ulong? productId, Stream fileStream, string fileName, string contentType, long fileSize)
         {
-            // Проверяем существование пользователя
-            var user = await _userRepository.GetByIdAsync((ulong)userId);
-            if (user == null)
+            // Проверяем, что передан либо userId, либо productId
+            if (!userId.HasValue && !productId.HasValue)
             {
-                throw new InvalidOperationException($"User with ID {userId} not found");
+                throw new InvalidOperationException("Either userId or productId must be provided");
             }
 
-            // Удаляем старый аватар если есть
-            var existingAvatar = await _fileRepository.GetUserAvatarAsync(userId);
-            if (existingAvatar != null)
+            // Если это аватар пользователя, проверяем существование пользователя и удаляем старый аватар
+            if (userId.HasValue)
             {
-                // Удаляем физический файл
-                DeletePhysicalFile(existingAvatar.Path);
-                await _fileRepository.DeletePhotoFileAsync((int)existingAvatar.Id);
+                var user = await _userRepository.GetByIdAsync(userId.Value);
+                if (user == null)
+                {
+                    throw new InvalidOperationException($"User with ID {userId.Value} not found");
+                }
+
+                // Удаляем старый аватар если есть
+                var existingAvatar = await _fileRepository.GetUserAvatarAsync(userId.Value);
+                if (existingAvatar != null)
+                {
+                    await _fileStorageService.DeleteFile(existingAvatar.Path);
+                    await _fileRepository.DeleteImageFileAsync(existingAvatar.Id);
+                }
             }
 
-            // Сохраняем новый файл
-            var fileExt = System.IO.Path.GetExtension(fileName);
-            var newFileName = $"avatar_{userId}_{Guid.NewGuid()}{fileExt}";
-            var relativePath = System.IO.Path.Combine("avatars", newFileName);
-            var fullPath = System.IO.Path.Combine(_uploadPath, "avatars", newFileName);
-
-            // Создаем директорию для аватаров
-            var avatarsDir = System.IO.Path.Combine(_uploadPath, "avatars");
-            if (!System.IO.Directory.Exists(avatarsDir))
+            // Определяем размеры изображения и сохраняем файл
+            int? width = null;
+            int? height = null;
+            MemoryStream memoryStream = new MemoryStream();
+            
+            try
             {
-                System.IO.Directory.CreateDirectory(avatarsDir);
+                // Создаем копию потока для чтения размеров (так как поток может быть использован только один раз)
+                await fileStream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                using (var image = Image.Load(memoryStream))
+                {
+                    width = image.Width;
+                    height = image.Height;
+                }
+
+                // Сбрасываем позицию для сохранения файла
+                memoryStream.Position = 0;
+            }
+            catch
+            {
+                // Если не удалось определить размеры, продолжаем без них
+                memoryStream.Position = 0;
             }
 
-            // Сохраняем файл
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await fileStream.CopyToAsync(stream);
-            }
+            // Сохраняем файл через FileStorageService
+            var blobIdOrPath = await _fileStorageService.SaveImageFileAsync(memoryStream, fileName, "image");
+            
+            // Освобождаем memoryStream
+            memoryStream.Dispose();
 
             // Создаем запись в БД
-            var photoFile = new PhotoFile
+            var imageFile = new ImageFile
             {
-                Path = relativePath,
+                Path = blobIdOrPath,
                 FileName = fileName,
                 MimeType = contentType,
-                FileSize = fileSize,
-                CreatedAt = DateTime.UtcNow,
-                FileCategory = "Photo",
-                UserId = (ulong)userId
+                Width = width,
+                Height = height,
+                UserId = userId,
+                ProductId = productId,
+                CreatedAt = DateTime.UtcNow
             };
 
-            var savedFile = await _fileRepository.AddPhotoFileAsync(photoFile);
+            var savedFile = await _fileRepository.AddImageFileAsync(imageFile);
 
-            // Обновляем пользователя
-            user.AvatarFileId = (ulong)savedFile.Id;
-            user.UpdatedAt = DateTime.UtcNow;
-            await _userRepository.UpdateAsync(user);
+            // Если это аватар, обновляем пользователя
+            if (userId.HasValue)
+            {
+                var user = await _userRepository.GetByIdAsync(userId.Value);
+                if (user != null)
+                {
+                    user.AvatarFileId = savedFile.Id;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _userRepository.UpdateAsync(user);
+                }
+            }
 
             return savedFile;
         }
 
-        public async Task<ProductFile> UploadProductFileAsync(int productId, Stream fileStream, string fileName, string contentType, long fileSize, string fileType)
+        public async Task<ImageFile?> GetImageFileByIdAsync(ulong id)
         {
-            // Сохраняем файл
-            var fileExt = System.IO.Path.GetExtension(fileName);
-            var newFileName = $"product_{productId}_{Guid.NewGuid()}{fileExt}";
-            var relativePath = System.IO.Path.Combine("products", newFileName);
-            var fullPath = System.IO.Path.Combine(_uploadPath, "products", newFileName);
-
-            // Создаем директорию для файлов продуктов
-            var productsDir = System.IO.Path.Combine(_uploadPath, "products");
-            if (!System.IO.Directory.Exists(productsDir))
-            {
-                System.IO.Directory.CreateDirectory(productsDir);
-            }
-
-            // Сохраняем файл
-            using (var stream = new FileStream(fullPath, FileMode.Create))
-            {
-                await fileStream.CopyToAsync(stream);
-            }
-
-            // Создаем запись в БД
-            var productFile = new ProductFile
-            {
-                Path = relativePath,
-                FileName = fileName,
-                MimeType = contentType,
-                FileSize = fileSize,
-                CreatedAt = DateTime.UtcNow,
-                FileCategory = "Product",
-                ProductId = (ulong)productId,
-                FileType = fileType
-            };
-
-            return await _fileRepository.AddProductFileAsync(productFile);
+            return await _fileRepository.GetImageFileByIdAsync(id);
         }
 
-        public async Task<PhotoFile?> GetPhotoFileByIdAsync(int id)
-        {
-            return await _fileRepository.GetPhotoFileByIdAsync(id);
-        }
-
-        public async Task<ProductFile?> GetProductFileByIdAsync(int id)
-        {
-            return await _fileRepository.GetProductFileByIdAsync(id);
-        }
-
-        public async Task<IEnumerable<ProductFile>> GetProductFilesAsync(int productId)
+        public async Task<IEnumerable<ImageFile>> GetProductFilesAsync(ulong productId)
         {
             return await _fileRepository.GetFilesByProductIdAsync(productId);
         }
 
-        public async Task<PhotoFile?> GetUserAvatarAsync(int userId)
+        public async Task<ImageFile?> GetUserAvatarAsync(ulong userId)
         {
             return await _fileRepository.GetUserAvatarAsync(userId);
         }
 
-        public async Task DeletePhotoFileAsync(int id)
+        public async Task DeleteImageFileAsync(ulong id)
         {
-            var file = await _fileRepository.GetPhotoFileByIdAsync(id);
+            var file = await _fileRepository.GetImageFileByIdAsync(id);
             if (file != null)
             {
-                DeletePhysicalFile(file.Path);
-                await _fileRepository.DeletePhotoFileAsync(id);
-            }
-        }
-
-        public async Task DeleteProductFileAsync(int id)
-        {
-            var file = await _fileRepository.GetProductFileByIdAsync(id);
-            if (file != null)
-            {
-                DeletePhysicalFile(file.Path);
-                await _fileRepository.DeleteProductFileAsync(id);
+                await _fileStorageService.DeleteFile(file.Path);
+                await _fileRepository.DeleteImageFileAsync(id);
             }
         }
 
         public string GetFileUrl(string path)
         {
-            return $"{_baseUrl}/{path.Replace("\\", "/")}";
-        }
-
-        private void DeletePhysicalFile(string relativePath)
-        {
-            var fullPath = System.IO.Path.Combine(_uploadPath, relativePath);
-            if (System.IO.File.Exists(fullPath))
-            {
-                System.IO.File.Delete(fullPath);
-            }
+            // Используем Firebase Storage публичный URL для прямой отдачи на фронт
+            return _fileStorageService.GetPublicUrl(path);
         }
     }
 }

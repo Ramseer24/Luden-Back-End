@@ -1,142 +1,121 @@
 using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
-using Infrastructure.Extentions;
 using Infrastructure.FirebaseDatabase;
-using Microsoft.EntityFrameworkCore;
-using FileEntity = Entities.Models.File;
+using System.Text.Json;
+using Infrastructure.Repositories;
 
 namespace Infrastructure.Repositories
 {
-    public class FileRepository : GenericRepository<FileEntity>, IFileRepository
+    public class FileRepository : GenericRepository<ImageFile>, IFileRepository
     {
-        private readonly LudenDbContext? _context; //для старой БД
-        private readonly bool _useFirebase;        //переключатель режима
-
-        public FileRepository(LudenDbContext context) : base(null!)
-        {
-            _context = context;
-            _useFirebase = false;
-        }
+        private readonly FirebaseRepository _firebaseRepo;
+        private const string CollectionName = "files"; // Используем "files" для обратной совместимости
 
         public FileRepository(FirebaseRepository firebaseRepo) : base(firebaseRepo)
         {
-            _useFirebase = true;
+            _firebaseRepo = firebaseRepo;
         }
 
-        // --- Методы работают в двух режимах ---
-
-        public async Task<PhotoFile?> GetPhotoFileByIdAsync(int id)
+        public async Task<ImageFile?> GetImageFileByIdAsync(ulong id)
         {
-            if (_useFirebase)
+            // Получаем сырой JSON из Firebase и десериализуем как ImageFile
+            // Используем "files" как имя коллекции (для обратной совместимости с существующими данными)
+            var result = await _firebaseRepo.GetAsync<ImageFile>($"files/{id}", new FirebaseConsoleListener<ImageFile>(data => { }));
+            
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.RawJson))
+                return null;
+
+            if (result.RawJson.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            try
             {
-                var result = await GetByIdAsync((ulong)id);
-                return result as PhotoFile;
+                // Десериализуем напрямую как ImageFile
+                var imageFile = JsonSerializer.Deserialize<ImageFile>(result.RawJson, JsonOptions.Default);
+                return imageFile;
             }
-
-            return await _context!.Set<PhotoFile>()
-                .Include(pf => pf.User)
-                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
-        }
-
-        public async Task<ProductFile?> GetProductFileByIdAsync(int id)
-        {
-            if (_useFirebase)
+            catch (Exception ex)
             {
-                var result = await GetByIdAsync((ulong)id);
-                return result as ProductFile;
+                Console.WriteLine($"[Firebase десериализация ImageFile] Ошибка: {ex.Message}");
+                return null;
             }
-
-            return await _context!.Set<ProductFile>()
-                .Include(pf => pf.Product)
-                .FirstOrDefaultAsync(pf => pf.Id.ToInt() == id);
         }
 
-        public async Task<IEnumerable<ProductFile>> GetFilesByProductIdAsync(int productId)
+        public async Task<IEnumerable<ImageFile>> GetFilesByProductIdAsync(ulong productId)
         {
-            if (_useFirebase)
+            // Используем "files" коллекцию напрямую
+            var result = await _firebaseRepo.GetAsync<Dictionary<string, ImageFile>>(CollectionName, new FirebaseConsoleListener<Dictionary<string, ImageFile>>(data => { }));
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.RawJson) || result.RawJson.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
+                return Enumerable.Empty<ImageFile>();
+
+            try
             {
-                var all = await GetAllAsync();
-                return all
-                    .OfType<ProductFile>()
-                    .Where(pf => pf.ProductId == productId.ToUlong())
-                    .OrderBy(pf => pf.DisplayOrder)
+                var dict = JsonSerializer.Deserialize<Dictionary<string, ImageFile>>(result.RawJson, JsonOptions.Default);
+                if (dict == null)
+                    return Enumerable.Empty<ImageFile>();
+
+                return dict.Values
+                    .Where(f => f.ProductId == productId)
                     .ToList();
             }
-
-            return await _context!.Set<ProductFile>()
-                .Where(pf => pf.ProductId == productId.ToUlong())
-                .OrderBy(pf => pf.DisplayOrder)
-                .ToListAsync();
-        }
-
-        public async Task<PhotoFile?> GetUserAvatarAsync(int userId)
-        {
-            if (_useFirebase)
+            catch
             {
-                var all = await GetAllAsync();
-                return all.OfType<PhotoFile>().FirstOrDefault(pf => pf.UserId == userId.ToUlong());
-            }
-
-            return await _context!.Set<PhotoFile>()
-                .FirstOrDefaultAsync(pf => pf.UserId == userId.ToUlong());
-        }
-
-        public async Task<PhotoFile> AddPhotoFileAsync(PhotoFile photoFile)
-        {
-            if (_useFirebase)
-            {
-                await AddAsync(photoFile);
-                return photoFile;
-            }
-
-            await _context!.Set<PhotoFile>().AddAsync(photoFile);
-            await _context.SaveChangesAsync();
-            return photoFile;
-        }
-
-        public async Task<ProductFile> AddProductFileAsync(ProductFile productFile)
-        {
-            if (_useFirebase)
-            {
-                await AddAsync(productFile);
-                return productFile;
-            }
-
-            await _context!.Set<ProductFile>().AddAsync(productFile);
-            await _context.SaveChangesAsync();
-            return productFile;
-        }
-
-        public async Task DeletePhotoFileAsync(int id)
-        {
-            if (_useFirebase)
-            {
-                await RemoveByIdAsync((ulong)id);
-                return;
-            }
-
-            var photoFile = await GetPhotoFileByIdAsync(id);
-            if (photoFile != null)
-            {
-                _context!.Set<PhotoFile>().Remove(photoFile);
-                await _context.SaveChangesAsync();
+                return Enumerable.Empty<ImageFile>();
             }
         }
 
-        public async Task DeleteProductFileAsync(int id)
+        public async Task<ImageFile?> GetUserAvatarAsync(ulong userId)
         {
-            if (_useFirebase)
+            // Используем "files" коллекцию напрямую
+            var result = await _firebaseRepo.GetAsync<Dictionary<string, ImageFile>>(CollectionName, new FirebaseConsoleListener<Dictionary<string, ImageFile>>(data => { }));
+            if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.RawJson) || result.RawJson.Trim().Equals("null", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            try
             {
-                await RemoveByIdAsync((ulong)id);
-                return;
+                var dict = JsonSerializer.Deserialize<Dictionary<string, ImageFile>>(result.RawJson, JsonOptions.Default);
+                if (dict == null)
+                    return null;
+
+                return dict.Values.FirstOrDefault(f => f.UserId == userId);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<ImageFile> AddImageFileAsync(ImageFile imageFile)
+        {
+            // Генерируем ID если не установлен
+            if (imageFile.Id == 0)
+            {
+                var baseId = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                // Проверяем, не существует ли уже запись с таким ID
+                var existing = await GetImageFileByIdAsync(baseId);
+                if (existing != null)
+                {
+                    // Если ID уже существует, добавляем случайное число
+                    var random = new Random();
+                    baseId += (ulong)random.Next(1, 10000);
+                }
+                imageFile.Id = baseId;
             }
 
-            var productFile = await GetProductFileByIdAsync(id);
-            if (productFile != null)
-            {
-                _context!.Set<ProductFile>().Remove(productFile);
-                await _context.SaveChangesAsync();
-            }
+            // Используем "files" коллекцию напрямую
+            var result = await _firebaseRepo.SetAsync($"{CollectionName}/{imageFile.Id}", imageFile, new ConsoleFirebaseListener());
+            if (!result.IsSuccess)
+                throw new Exception($"Failed to add image file: {result.Message}");
+
+            return imageFile;
+        }
+
+        public async Task DeleteImageFileAsync(ulong id)
+        {
+            // Используем "files" коллекцию напрямую
+            var result = await _firebaseRepo.DeleteAsync($"{CollectionName}/{id}", new ConsoleFirebaseListener());
+            if (!result.IsSuccess)
+                throw new Exception($"Failed to delete image file: {result.Message}");
         }
     }
 }

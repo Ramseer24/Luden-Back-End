@@ -4,15 +4,19 @@ using Application.Abstractions.Interfaces.Services;
 using Application.Services;
 using Entities.Config;
 using Entities.Models;
-using Infrastructure;
+using FileSignatures;
+using FileSignatures.Formats;
+using Infrastructure.FileStorage;
 using Infrastructure.FirebaseDatabase;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Stripe;
 using System.Text;
+using Product = Entities.Models.Product;
+using ProductService = Application.Services.ProductService;
 
 namespace LudenWebAPI;
 
@@ -22,54 +26,33 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // =============================
-        // Выбор режима: Firebase или SQLite
-        // =============================
-        bool useFirebase = true; // <-- переключатель режима
-
         Config config = new();
         var stripeOptions = new StripeOptions();
         builder.Configuration.Bind(config);
         StripeConfiguration.ApiKey = builder.Configuration.GetSection("StripeOptions")["SecretKey"];
         builder.Services.AddSingleton(config);
 
-        if (!useFirebase)
-        {
-            // --- SQLite режим ---
-            builder.Services.AddDbContext<LudenDbContext>(options =>
-                options.UseSqlite(builder.Configuration.GetConnectionString("LudenDbContext") ??
-                                  throw new InvalidOperationException("Connection string 'LudenDbContext' not found.")));
+        // Firebase режим
+        builder.Services.AddSingleton<FirebaseService>();      // Сервис для REST-запросов
+        builder.Services.AddScoped<FirebaseRepository>();      // Универсальный репозиторий
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
-                new UserRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
+            new UserRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
-                new BillRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
+            new BillRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
-                new FileRepository(sp.GetRequiredService<LudenDbContext>()));
+        builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
+            new FileRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
-                new PaymentRepository(sp.GetRequiredService<LudenDbContext>()));
-        }
-        else
-        {
-            // --- Firebase режим ---
-            builder.Services.AddSingleton<FirebaseService>();      // Сервис для REST-запросов
-            builder.Services.AddScoped<FirebaseRepository>();      // Универсальный репозиторий
+        builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
+            new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>(sp =>
-                new UserRepository(sp.GetRequiredService<FirebaseRepository>()));
+        builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>(sp =>
+            new FavoriteRepository(sp.GetRequiredService<FirebaseRepository>()));
 
-            builder.Services.AddScoped<IBillRepository, BillRepository>(sp =>
-                new BillRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IFileRepository, FileRepository>(sp =>
-                new FileRepository(sp.GetRequiredService<FirebaseRepository>()));
-
-            builder.Services.AddScoped<IPaymentRepository, PaymentRepository>(sp =>
-                new PaymentRepository(sp.GetRequiredService<FirebaseRepository>()));
-        }
+        builder.Services.AddScoped<IGenericRepository<Product>, GenericRepository<Product>>(sp =>
+            new GenericRepository<Product>(sp.GetRequiredService<FirebaseRepository>()));
 
         // =============================
         // Остальные сервисы
@@ -108,7 +91,8 @@ public class Program
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role
                 };
             });
 
@@ -121,6 +105,74 @@ public class Program
         builder.Services.AddScoped<IFileService, Application.Services.FileService>();
         builder.Services.AddScoped<IStripeService, StripeService>();
         builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
+        builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+
+        // File storage and validation services
+        // Используем GitHub репозиторий для хранения файлов
+        builder.Services.AddHttpClient();
+
+        // Загружаем конфигурацию GitHub Storage
+        var githubStorageConfig = new GitHubStorageConfig();
+        builder.Configuration.GetSection("GitHubStorage").Bind(githubStorageConfig);
+
+        // Регистрируем GitHubStorageService для обоих режимов
+        builder.Services.AddSingleton<IFileStorageService>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
+            return new GitHubStorageService(httpClient, githubStorageConfig);
+        });
+
+        builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector(
+            [new Png(), new Jpeg(), new Gif()]));
+
+        // =============================
+        // Swagger/OpenAPI
+        // =============================
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Luden Web API",
+                Version = "v1",
+                Description = "API для управления пользователями, продуктами, счетами и файлами",
+                Contact = new OpenApiContact
+                {
+                    Name = "Luden Team"
+                }
+            });
+
+            // Настройка для работы с файловыми загрузками (multipart/form-data)
+            c.EnableAnnotations();
+            c.CustomSchemaIds(type => type.FullName);
+
+            // Добавляем JWT авторизацию в Swagger
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
 
         // =============================
         // Middleware
@@ -139,23 +191,39 @@ public class Program
             RequestPath = "/uploads"
         });
 
+        // Swagger/OpenAPI только в Development режиме
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Luden Web API v1");
+                c.RoutePrefix = "swagger"; // Swagger будет доступен по /swagger
+                c.DisplayRequestDuration();
+            });
+
+            // Редирект с корневого пути на Swagger
+            app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+        }
+
+        // HTTPS редирект
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors("ArtemPetrenko");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
-            
+
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
             ////асинхронный тест и блок потока до завершения
             //RunFirebaseRepoTestsAsync(services).GetAwaiter().GetResult();
         }
-            
+
         app.Run();
     }
-    
+
     //типо тесты для работы с файрбазе
     private static async Task RunFirebaseRepoTestsAsync(IServiceProvider services)
     {
@@ -175,7 +243,7 @@ public class Program
             Username = "TestUser",
             Email = "testuser@luden.com",
             PasswordHash = "hashed123",
-            Role = "tester",
+            Role = Entities.Enums.UserRole.User,
             CreatedAt = DateTime.UtcNow
         };
         await users.AddAsync(testUser);
@@ -199,11 +267,11 @@ public class Program
         await bills.AddAsync(testBill);
         Console.WriteLine("BillRepository.AddAsync() работает.");
 
-        var userBills = await bills.GetBillsByUserIdAsync((int)testUser.Id);
+        var userBills = await bills.GetBillsByUserIdAsync(testUser.Id);
         Console.WriteLine(userBills.Any() ? "BillRepository.GetBillsByUserIdAsync() работает." : "Счета пользователя не найдены.");
 
         //FileRepository
-        var photo = new PhotoFile
+        var photo = new ImageFile
         {
             Id = 7777,
             FileName = "test_avatar.png",
@@ -215,7 +283,7 @@ public class Program
         await files.AddAsync(photo);
         Console.WriteLine("FileRepository.AddAsync() работает.");
 
-        var fetchedPhoto = await files.GetByIdAsync(photo.Id);
+        var fetchedPhoto = await files.GetImageFileByIdAsync(photo.Id);
         Console.WriteLine(fetchedPhoto != null ? "FileRepository.GetByIdAsync() работает." : "Фото не найдено.");
 
         //PaymentRepository

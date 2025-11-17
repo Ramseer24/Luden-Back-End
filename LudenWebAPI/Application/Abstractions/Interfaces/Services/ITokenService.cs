@@ -10,6 +10,6 @@ namespace Application.Abstractions.Interfaces
     public interface ITokenService
     {
         Task<string?> GenerateToken(UserLoginDTO loginData);
-        int GetUserIdFromToken(string token);
+        ulong GetUserIdFromToken(string token);
     }
 }

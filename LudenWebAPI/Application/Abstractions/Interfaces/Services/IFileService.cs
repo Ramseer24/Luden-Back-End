@@ -1,18 +1,14 @@
 using Entities.Models;
-using FileEntity = Entities.Models.File;
 
 namespace Application.Abstractions.Interfaces.Services
 {
-    public interface IFileService : IGenericService<FileEntity>
+    public interface IFileService : IGenericService<ImageFile>
     {
-        Task<PhotoFile> UploadUserAvatarAsync(int userId, Stream fileStream, string fileName, string contentType, long fileSize);
-        Task<ProductFile> UploadProductFileAsync(int productId, Stream fileStream, string fileName, string contentType, long fileSize, string fileType);
-        Task<PhotoFile?> GetPhotoFileByIdAsync(int id);
-        Task<ProductFile?> GetProductFileByIdAsync(int id);
-        Task<IEnumerable<ProductFile>> GetProductFilesAsync(int productId);
-        Task<PhotoFile?> GetUserAvatarAsync(int userId);
-        Task DeletePhotoFileAsync(int id);
-        Task DeleteProductFileAsync(int id);
+        Task<ImageFile> UploadImageAsync(ulong? userId, ulong? productId, Stream fileStream, string fileName, string contentType, long fileSize);
+        Task<ImageFile?> GetImageFileByIdAsync(ulong id);
+        Task<IEnumerable<ImageFile>> GetProductFilesAsync(ulong productId);
+        Task<ImageFile?> GetUserAvatarAsync(ulong userId);
+        Task DeleteImageFileAsync(ulong id);
         string GetFileUrl(string path);
     }
 }
