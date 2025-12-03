@@ -223,6 +223,7 @@ namespace LudenWebAPI.Controllers
                     Region = p.Region,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
+                    CoverUrl = p.CoverFile != null ? _fileService.GetFileUrl(p.CoverFile.Path) : null,
                     Files = p.Files?.Select(f => new ProductFileDto
                     {
                         Id = f.Id,

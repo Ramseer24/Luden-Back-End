@@ -68,18 +68,72 @@ namespace Infrastructure.Repositories
                 (b.Status == Entities.Enums.BillStatus.Paid ||
                  b.Status == Entities.Enums.BillStatus.Completed)).ToList();
 
-            var productIds = paidBills
-                .SelectMany(b => b.BillItems.Select(bi => bi.ProductId))
+            // Если нет оплаченных счетов, возвращаем пустой список
+            if (!paidBills.Any())
+            {
+                return new List<Product>();
+            }
+
+            // Загружаем все BillItems
+            var billItemsRepo = new GenericRepository<BillItem>(new FirebaseRepository(new FirebaseService()));
+            var allBillItems = await billItemsRepo.GetAllAsync();
+
+            // Получаем ID оплаченных счетов
+            var paidBillIds = paidBills.Select(b => b.Id).ToHashSet();
+
+            // Фильтруем BillItems только для оплаченных счетов
+            var productIds = allBillItems
+                .Where(bi => paidBillIds.Contains(bi.BillId))
+                .Select(bi => bi.ProductId)
                 .Distinct()
                 .ToList();
+
+            // Если нет продуктов, возвращаем пустой список
+            if (!productIds.Any())
+            {
+                return new List<Product>();
+            }
 
             // Получаем все продукты из Firebase
             var productsRepo = new GenericRepository<Product>(new FirebaseRepository(new FirebaseService()));
             var allProducts = await productsRepo.GetAllAsync();
 
-            return allProducts
+            var userProducts = allProducts
                 .Where(p => productIds.Contains(p.Id))
                 .ToList();
+
+            // Загружаем связанные данные для каждого продукта
+            var filesRepo = new GenericRepository<ImageFile>(new FirebaseRepository(new FirebaseService()));
+            var regionsRepo = new GenericRepository<Region>(new FirebaseRepository(new FirebaseService()));
+            var licensesRepo = new GenericRepository<License>(new FirebaseRepository(new FirebaseService()));
+
+            var allFiles = await filesRepo.GetAllAsync();
+            var allRegions = await regionsRepo.GetAllAsync();
+            var allLicenses = await licensesRepo.GetAllAsync();
+
+            // Заполняем связанные данные
+            foreach (var product in userProducts)
+            {
+                // Загружаем файлы продукта
+                product.Files = allFiles.Where(f => f.ProductId == product.Id).ToList();
+
+                // Загружаем регион
+                if (product.RegionId > 0)
+                {
+                    product.Region = allRegions.FirstOrDefault(r => r.Id == product.RegionId);
+                }
+
+                // Загружаем лицензии продукта
+                product.Licenses = allLicenses.Where(l => l.ProductId == product.Id).ToList();
+
+                // Устанавливаем CoverFile если есть CoverFileId
+                if (product.CoverFileId.HasValue)
+                {
+                    product.CoverFile = allFiles.FirstOrDefault(f => f.Id == product.CoverFileId.Value);
+                }
+            }
+
+            return userProducts;
         }
     }
 }

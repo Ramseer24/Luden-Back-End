@@ -53,7 +53,7 @@ namespace Application.Services
         {
             User? user = await repository.GetByIdAsync(id);
             ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
-            ICollection<Product> products = await GetUserProductsByIdAsync(id);
+                ICollection<Product> products = await GetUserProductsByIdAsync(id);
 
             string? avatarUrl = null;
             if (user.AvatarFileId.HasValue)
