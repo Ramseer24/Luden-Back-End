@@ -1,65 +1,39 @@
 ﻿using Application.Abstractions.Interfaces.Repository;
 using Entities.Models;
 using Infrastructure.FirebaseDatabase;
-using Infrastructure.Extentions;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
     public class BillRepository : GenericRepository<Bill>, IBillRepository
     {
-        private readonly LudenDbContext? _context;
-        private readonly FirebaseRepository? _firebaseRepo;
-        private readonly bool _useFirebase;
+        private readonly FirebaseRepository _firebaseRepo;
 
-        // 🔹 Конструктор для SQLite
-        public BillRepository(LudenDbContext context) : base(null!)
-        {
-            _context = context;
-            _useFirebase = false;
-        }
-
-        // 🔹 Конструктор для Firebase
         public BillRepository(FirebaseRepository firebaseRepo) : base(firebaseRepo)
         {
             _firebaseRepo = firebaseRepo;
-            _useFirebase = true;
         }
 
         public async Task<IEnumerable<Bill>> GetBillsByUserIdAsync(ulong userId)
         {
-            if (_useFirebase)
-            {
-                var bills = new List<Bill>();
+            var bills = new List<Bill>();
 
-                // Firebase не поддерживает сложные запросы, поэтому фильтруем вручную
-                await _firebaseRepo!.GetAsync<Dictionary<string, Bill>>(
-                    "bills",
-                    new FirebaseConsoleListener<Dictionary<string, Bill>>(data =>
+            // Firebase не поддерживает сложные запросы, поэтому фильтруем вручную
+            await _firebaseRepo.GetAsync<Dictionary<string, Bill>>(
+                "bills",
+                new FirebaseConsoleListener<Dictionary<string, Bill>>(data =>
+                {
+                    if (data != null)
                     {
-                        if (data != null)
+                        foreach (var b in data.Values)
                         {
-                            foreach (var b in data.Values)
-                            {
-                                if (b.UserId == userId)
-                                    bills.Add(b);
-                            }
+                            if (b.UserId == userId)
+                                bills.Add(b);
                         }
-                    })
-                );
+                    }
+                })
+            );
 
-                return bills.OrderByDescending(b => b.CreatedAt);
-            }
-            else
-            {
-                // Старый EF Core режим
-                return await _context!.Bills
-                    .Include(b => b.BillItems)
-                    .ThenInclude(bi => bi.Product)
-                    .Where(b => b.UserId == userId)
-                    .OrderByDescending(b => b.CreatedAt)
-                    .ToListAsync();
-            }
+            return bills.OrderByDescending(b => b.CreatedAt);
         }
     }
 

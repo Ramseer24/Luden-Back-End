@@ -1,9 +1,8 @@
 using Entities.Models;
-using FileEntity = Entities.Models.File;
 
 namespace Application.Abstractions.Interfaces.Services
 {
-    public interface IFileService : IGenericService<FileEntity>
+    public interface IFileService : IGenericService<ImageFile>
     {
         Task<PhotoFile> UploadUserAvatarAsync(ulong userId, Stream fileStream, string fileName, string contentType, long fileSize);
         Task<ProductFile> UploadProductFileAsync(ulong productId, Stream fileStream, string fileName, string contentType, long fileSize, string fileType);

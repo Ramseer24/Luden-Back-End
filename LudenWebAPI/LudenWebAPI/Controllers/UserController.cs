@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Interfaces;
 using Application.Abstractions.Interfaces.Services;
+using Application.DTOs.ProductDTOs;
 using Application.DTOs.UserDTOs;
 using Entities.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -27,15 +28,32 @@ namespace LudenWebAPI.Controllers
 
         // GET: api/User
         [HttpGet]
-        public async Task<ActionResult> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            var users = await _userService.GetAllUsersAsync();
-            return Ok(users);
+            try
+            {
+                var users = await _userService.GetAllUsersAsync();
+                var userDtos = users.Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    Role = u.Role,
+                    BonusPoints = u.BonusPoints,
+                    CreatedAt = u.CreatedAt,
+                    UpdatedAt = u.UpdatedAt
+                });
+                return Ok(userDtos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving users: {ex.Message}");
+            }
         }
 
         // GET: api/User/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(ulong id)
+        public async Task<ActionResult<UserDto>> GetUser(ulong id)
         {
             try
             {
@@ -44,11 +62,21 @@ namespace LudenWebAPI.Controllers
                 {
                     return NotFound();
                 }
-                return Ok(user);
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    Role = user.Role,
+                    BonusPoints = user.BonusPoints,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                };
+                return Ok(userDto);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while retrieving the user.");
+                return StatusCode(500, $"An error occurred while retrieving the user: {ex.Message}");
             }
         }
 
@@ -89,20 +117,7 @@ namespace LudenWebAPI.Controllers
                     return NotFound("User not found");
                 }
 
-                // Обновляем данные пользователя
-                if (!string.IsNullOrEmpty(dto.Username))
-                {
-                    user.Username = dto.Username;
-                }
-
-                if (!string.IsNullOrEmpty(dto.Email))
-                {
-                    user.Email = dto.Email;
-                }
-
-                user.UpdatedAt = DateTime.UtcNow;
-
-                // Загружаем аватар если предоставлен
+                // Загружаем аватар если предоставлен (делаем это первым, чтобы AvatarFileId был установлен)
                 string? avatarUrl = null;
                 if (dto.Avatar != null && dto.Avatar.Length > 0)
                 {
@@ -121,11 +136,32 @@ namespace LudenWebAPI.Controllers
 
                     using (var stream = dto.Avatar.OpenReadStream())
                     {
-                        var photoFile = await _fileService.UploadUserAvatarAsync(userId, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
+                        var photoFile = await _fileService.UploadImageAsync(userId, null, stream, dto.Avatar.FileName, dto.Avatar.ContentType, dto.Avatar.Length);
                         avatarUrl = _fileService.GetFileUrl(photoFile.Path);
+                    }
+                    
+                    // Получаем обновленного пользователя после загрузки аватара
+                    user = await _userService.GetByIdAsync((ulong)userId);
+                    if (user == null)
+                    {
+                        return NotFound("User not found");
                     }
                 }
 
+                // Обновляем данные пользователя
+                if (!string.IsNullOrEmpty(dto.Username))
+                {
+                    user.Username = dto.Username;
+                }
+
+                if (!string.IsNullOrEmpty(dto.Email))
+                {
+                    user.Email = dto.Email;
+                }
+
+                user.UpdatedAt = DateTime.UtcNow;
+
+                // Сохраняем все изменения пользователя в БД
                 await _userService.UpdateAsync(user);
 
                 return Ok(new
@@ -168,7 +204,7 @@ namespace LudenWebAPI.Controllers
 
         // GET: api/User/products - получение продуктов пользователя
         [HttpGet("products")]
-        public async Task<ActionResult<ICollection<Product>>> GetUserProducts()
+        public async Task<ActionResult<ICollection<ProductDto>>> GetUserProducts()
         {
             try
             {
@@ -176,7 +212,34 @@ namespace LudenWebAPI.Controllers
                 var userId = _tokenService.GetUserIdFromToken(token);
                 var products = await _userService.GetUserProductsByIdAsync(userId);
 
-                return Ok(products);
+                var productDtos = products.Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Stock = p.Stock,
+                    RegionId = (int?)p.RegionId,
+                    Region = p.Region,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    CoverUrl = p.CoverFile != null ? _fileService.GetFileUrl(p.CoverFile.Path) : null,
+                    Files = p.Files?.Select(f => new ProductFileDto
+                    {
+                        Id = f.Id,
+                        Path = f.Path,
+                        FileName = f.FileName,
+                        MimeType = f.MimeType,
+                        Width = f.Width,
+                        Height = f.Height,
+                        UserId = f.UserId,
+                        ProductId = f.ProductId,
+                        Url = _fileService.GetFileUrl(f.Path)
+                    }).ToList() ?? new List<ProductFileDto>(),
+                    Licenses = p.Licenses ?? new List<License>()
+                }).ToList();
+
+                return Ok(productDtos);
             }
             catch (Exception ex)
             {

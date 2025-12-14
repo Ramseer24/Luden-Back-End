@@ -3,16 +3,19 @@ using System;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
 namespace Infrastructure.Migrations
 {
-    [DbContext(typeof(LudenDbContext))]
-    partial class LudenDbContextModelSnapshot : ModelSnapshot
+    //[DbContext(typeof(LudenDbContext))]
+    [Migration("20251111145918_hz")]
+    partial class hz
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");

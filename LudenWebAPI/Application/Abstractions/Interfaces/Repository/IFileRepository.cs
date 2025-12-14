@@ -1,9 +1,8 @@
 using Entities.Models;
-using FileEntity = Entities.Models.File;
 
 namespace Application.Abstractions.Interfaces.Repository
 {
-    public interface IFileRepository : IGenericRepository<FileEntity>
+    public interface IFileRepository : IGenericRepository<ImageFile>
     {
         Task<PhotoFile?> GetPhotoFileByIdAsync(ulong id);
         Task<ProductFile?> GetProductFileByIdAsync(ulong id);

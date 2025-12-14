@@ -48,7 +48,8 @@ namespace Application.Services
             [
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim("Id", user.Id.ToString())
+                new Claim("Id", user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             ];
 
             if (!string.IsNullOrEmpty(user.Username))

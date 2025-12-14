@@ -125,31 +125,8 @@ namespace Infrastructure.Repositories
 
             try
             {
-                //Если тип File — пробуем определить подтип вручную
-                if (typeof(T) == typeof(Entities.Models.File))
-                {
-                    try
-                    {
-                        var photo = JsonSerializer.Deserialize<PhotoFile>(result.RawJson);
-                        if (photo != null)
-                            return photo as T;
-                    }
-                    catch { /* Игнорируем — не подходит */ }
-
-                    try
-                    {
-                        var product = JsonSerializer.Deserialize<ProductFile>(result.RawJson);
-                        if (product != null)
-                            return product as T;
-                    }
-                    catch { /* Игнорируем — не подходит */ }
-
-                    Console.WriteLine("[Firebase] Не удалось определить подтип File.");
-                    return null;
-                }
-
-                //Для всех остальных типов — стандартная десериализация
-                return JsonSerializer.Deserialize<T>(result.RawJson);
+                // Стандартная десериализация
+                return JsonSerializer.Deserialize<T>(result.RawJson, JsonOptions.Default);
             }
             catch (Exception ex)
             {
@@ -173,7 +150,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как Dictionary<string, T>
-                var map = JsonSerializer.Deserialize<Dictionary<string, T>>(json);
+                var map = JsonSerializer.Deserialize<Dictionary<string, T>>(json, JsonOptions.Default);
                 if (map != null)
                     return map.Values;
             }
@@ -182,7 +159,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как массив
-                var list = JsonSerializer.Deserialize<List<T>>(json);
+                var list = JsonSerializer.Deserialize<List<T>>(json, JsonOptions.Default);
                 if (list != null)
                     return list;
             }
@@ -191,7 +168,7 @@ namespace Infrastructure.Repositories
             try
             {
                 // Попробуем как одиночный объект
-                var single = JsonSerializer.Deserialize<T>(json);
+                var single = JsonSerializer.Deserialize<T>(json, JsonOptions.Default);
                 if (single != null)
                     return new List<T> { single };
             }

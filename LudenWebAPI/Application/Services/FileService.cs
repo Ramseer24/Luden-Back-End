@@ -1,11 +1,11 @@
 using Application.Abstractions.Interfaces.Repository;
 using Application.Abstractions.Interfaces.Services;
 using Entities.Models;
-using FileEntity = Entities.Models.File;
+using SixLabors.ImageSharp;
 
 namespace Application.Services
 {
-    public class FileService : GenericService<FileEntity>, IFileService
+    public class FileService : GenericService<ImageFile>, IFileService
     {
         private readonly IFileRepository _fileRepository;
         private readonly IUserRepository _userRepository;
@@ -46,8 +46,14 @@ namespace Application.Services
             // В SQLite режиме: возвращает относительный путь к файлу
             var blobIdOrPath = await _fileStorageService.SaveImageFileAsync(fileStream, fileName, "image");
 
+            // Сохраняем файл через FileStorageService
+            var blobIdOrPath = await _fileStorageService.SaveImageFileAsync(memoryStream, fileName, "image");
+            
+            // Освобождаем memoryStream
+            memoryStream.Dispose();
+
             // Создаем запись в БД
-            var photoFile = new PhotoFile
+            var imageFile = new ImageFile
             {
                 Path = blobIdOrPath, // В Firebase режиме это blob ID, в SQLite - путь к файлу
                 FileName = fileName,
@@ -98,7 +104,7 @@ namespace Application.Services
 
         public async Task<ProductFile?> GetProductFileByIdAsync(ulong id)
         {
-            return await _fileRepository.GetProductFileByIdAsync(id);
+            return await _fileRepository.GetImageFileByIdAsync(id);
         }
 
         public async Task<IEnumerable<ProductFile>> GetProductFilesAsync(ulong productId)
@@ -123,7 +129,7 @@ namespace Application.Services
 
         public async Task DeleteProductFileAsync(ulong id)
         {
-            var file = await _fileRepository.GetProductFileByIdAsync(id);
+            var file = await _fileRepository.GetImageFileByIdAsync(id);
             if (file != null)
             {
                 await _fileStorageService.DeleteFile(file.Path);

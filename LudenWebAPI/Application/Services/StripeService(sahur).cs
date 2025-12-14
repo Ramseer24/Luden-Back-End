@@ -46,7 +46,7 @@ namespace Application.Services
             };
 
             var paymentIntent = await _paymentIntentService.CreateAsync(options);
-            return paymentIntent.Id;
+            return paymentIntent.ClientSecret;
         }
         public async Task<PaymentOrder?> UpdatePaymentStatusAsync(string paymentIntentId, string paymentMethod, string action)
         {
@@ -140,6 +140,22 @@ namespace Application.Services
             if (await repository.ExistsByTransactionIdAsync(transactionId))
                 throw new Exception("Payment already processed.");
 
+            // Получаем Bill ID из metadata
+            if (paymentIntent.Metadata != null && paymentIntent.Metadata.TryGetValue("bill_id", out var billIdStr))
+            {
+                if (ulong.TryParse(billIdStr, out var billId))
+                {
+                    var bill = await billService.GetByIdAsync(billId);
+                    if (bill != null && bill.Status == BillStatus.Pending)
+                    {
+                        // Обновляем статус счета на Paid
+                        bill.Status = BillStatus.Paid;
+                        bill.UpdatedAt = DateTime.UtcNow;
+                        await billService.UpdateAsync(bill);
+                    }
+                }
+            }
+
             var paymentOrder = new PaymentOrder
             {
                 ProviderTransactionId = transactionId,
@@ -149,7 +165,7 @@ namespace Application.Services
                 Currency = currency,
                 CreatedAt = createTime,
                 TokensAmount = 0,
-                DeliveredAt = DateTime.MinValue,
+                DeliveredAt = DateTime.UtcNow,
                 UserId = user.Id,
                 User = user
             };

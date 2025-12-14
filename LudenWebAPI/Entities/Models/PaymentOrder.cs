@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace Entities.Models
 {
     public class PaymentOrder : IEntity
     {
+        public ulong Id { get; set; }
         public string ProviderTransactionId { get; set; } = null!;
         public string Provider { get; set; } = null!;
         public bool Success { get; set; }
@@ -17,8 +14,10 @@ namespace Entities.Models
         public int TokensAmount { get; set; }
         public DateTime DeliveredAt { get; set; }
         public ulong UserId { get; set; }
-        public User User { get; set; } = null!;
         public DateTime? UpdatedAt { get; set; }
-        public ulong Id { get; set; }
+
+        // Навигационное свойство (игнорируется при сериализации для избежания циклических ссылок)
+        [JsonIgnore]
+        public User? User { get; set; }
     }
 }

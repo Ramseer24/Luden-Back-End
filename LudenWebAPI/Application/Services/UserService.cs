@@ -8,7 +8,7 @@ using Entities.Models;
 
 namespace Application.Services
 {
-    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher, IFileRepository fileRepository) : GenericService<User>(repository), IUserService
+    public class UserService(IUserRepository repository, IPasswordHasher passwordHasher, IFileRepository fileRepository, IFileService fileService) : GenericService<User>(repository), IUserService
     {
         public async Task<User> GetUserByUsernameAsync(string username)
         {
@@ -53,7 +53,7 @@ namespace Application.Services
         {
             User? user = await repository.GetByIdAsync(id);
             ICollection<Bill> bills = await GetUserBillsByIdAsync(id);
-            ICollection<Product> products = await GetUserProductsByIdAsync(id);
+                ICollection<Product> products = await GetUserProductsByIdAsync(id);
 
             string? avatarUrl = null;
             if (user.AvatarFileId.HasValue)
@@ -61,7 +61,7 @@ namespace Application.Services
                 var avatarFile = await fileRepository.GetPhotoFileByIdAsync(user.AvatarFileId.Value);
                 if (avatarFile != null)
                 {
-                    avatarUrl = $"/uploads/{avatarFile.Path.Replace("\\", "/")}";
+                    avatarUrl = fileService.GetFileUrl(avatarFile.Path);
                 }
             }
 
@@ -70,6 +70,7 @@ namespace Application.Services
                 Username = user.Username,
                 Email = user.Email,
                 Role = user.Role,
+                BonusPoints = user.BonusPoints,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 AvatarUrl = avatarUrl,
@@ -106,9 +107,12 @@ namespace Application.Services
                         Id = f.Id,
                         Path = f.Path,
                         FileName = f.FileName,
-                        FileType = f.FileType,
-                        DisplayOrder = f.DisplayOrder,
-                        MimeType = f.MimeType
+                        MimeType = f.MimeType,
+                        Width = f.Width,
+                        Height = f.Height,
+                        UserId = f.UserId,
+                        ProductId = f.ProductId,
+                        Url = fileService.GetFileUrl(f.Path)
                     }).ToList() ?? new List<ProductFileDto>()
                 }).ToList() ?? new List<ProductDto>()
             };
