@@ -205,7 +205,7 @@ namespace Application.Services
                 Category = product.Category,
                 CoverUrl = coverUrl,
                 Files = files,
-                Licenses = product.Licenses ?? new List<License>()
+                Licenses = new List<License>()
             };
         }
     }
