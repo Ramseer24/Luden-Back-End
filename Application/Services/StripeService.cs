@@ -172,26 +172,36 @@ namespace Application.Services
                         var allBillItems = await billItemRepository.GetAllAsync();
                         var billItems = allBillItems.Where(bi => bi.BillId == billId).ToList();
 
+                        // Load all licenses to check for duplicates (idempotency)
+                        var allLicenses = await licenseRepository.GetAllAsync();
+
                         foreach (var item in billItems)
                         {
                             var product = await productRepository.GetByIdAsync(item.ProductId);
                             if (product != null)
                             {
-                                product.SalesCount += item.Quantity;
-                                await productRepository.UpdateAsync(product);
+                                // Check how many licenses already exist for this bill item
+                                int existingLicensesCount = allLicenses.Count(l => l.BillItemId == item.Id);
+                                int licensesToCreate = item.Quantity - existingLicensesCount;
 
-                                for (int i = 0; i < item.Quantity; i++)
+                                if (licensesToCreate > 0)
                                 {
-                                    var license = new License
+                                    product.SalesCount += licensesToCreate;
+                                    await productRepository.UpdateAsync(product);
+
+                                    for (int i = 0; i < licensesToCreate; i++)
                                     {
-                                        ProductId = product.Id,
-                                        BillItemId = item.Id,
-                                        LicenseKey = $"{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}",
-                                        Status = "Active",
-                                        CreatedAt = DateTime.UtcNow,
-                                        UpdatedAt = DateTime.UtcNow
-                                    };
-                                    await licenseRepository.AddAsync(license);
+                                        var license = new License
+                                        {
+                                            ProductId = product.Id,
+                                            BillItemId = item.Id,
+                                            LicenseKey = $"{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}",
+                                            Status = "Active",
+                                            CreatedAt = DateTime.UtcNow,
+                                            UpdatedAt = DateTime.UtcNow
+                                        };
+                                        await licenseRepository.AddAsync(license);
+                                    }
                                 }
                             }
                         }
