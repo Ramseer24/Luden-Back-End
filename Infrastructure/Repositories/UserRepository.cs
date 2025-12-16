@@ -117,6 +117,12 @@ namespace Infrastructure.Repositories
             // Получаем ID оплаченных счетов
             var paidBillIds = paidBills.Select(b => b.Id).ToHashSet();
 
+            // Получаем ID оплаченных BillItems пользователя для фильтрации лицензий
+            var userBillItemIds = allBillItems
+                .Where(bi => paidBillIds.Contains(bi.BillId))
+                .Select(bi => bi.Id)
+                .ToHashSet();
+
             // Фильтруем BillItems только для оплаченных счетов
             var productIds = allBillItems
                 .Where(bi => paidBillIds.Contains(bi.BillId))
@@ -156,7 +162,10 @@ namespace Infrastructure.Repositories
                     product.Region = allRegions.FirstOrDefault(r => r.Id == product.RegionId);
                 }
 
-                product.Licenses = allLicenses.Where(l => l.ProductId == product.Id).ToList();
+                // Фильтруем лицензии: берем только те, что принадлежат пользователю (через BillItem)
+                product.Licenses = allLicenses
+                    .Where(l => l.ProductId == product.Id && userBillItemIds.Contains(l.BillItemId))
+                    .ToList();
             }
 
             return userProducts;
